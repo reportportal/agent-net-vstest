@@ -107,7 +107,7 @@ namespace ReportPortal.VSTest
                 _isRunStarted = true;
             }
 
-            TestStarted(e.Result.DisplayName, e.Result.StartTime.UtcDateTime);
+            TestStarted(e.Result.TestCase.DisplayName ?? e.Result.TestCase.FullyQualifiedName, e.Result.StartTime.UtcDateTime);
 
             TestFinished(e.Result);
 
@@ -193,13 +193,13 @@ namespace ReportPortal.VSTest
                     Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
                 });
             }
-
             if (_testId != null)
             {
+                var description = result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
                 var requestUpdateTest = new UpdateTestItemRequest
                 {
-                    Description =result.Messages[0].Text,
-                    Tags = Configuration.ReportPortal.Launch.Tags.Split(',').ToList()
+                    Description = description != null ? description.Value : String.Empty,
+                    Tags = result.TestCase.Traits.Select(x => x.Name).ToList()
                 };
                 _testId.Update(requestUpdateTest);
 
