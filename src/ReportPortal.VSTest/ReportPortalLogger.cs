@@ -9,6 +9,7 @@ using ReportPortal.Client;
 using ReportPortal.Shared;
 using ReportPortal.Client.Requests;
 using System.Diagnostics;
+using System.Linq;
 
 namespace ReportPortal.VSTest
 {
@@ -197,10 +198,8 @@ namespace ReportPortal.VSTest
             {
                 var requestUpdateTest = new UpdateTestItemRequest
                 {
-                    //TODO
-                    Description = "This is description",
-                    Tags = new List<string> { "Tag1", "Tag2" }
-                    //Tags = (from object tag in result.Test.Categories select tag.ToString()).ToList()
+                    Description =result.Messages[0].Text,
+                    Tags = Configuration.ReportPortal.Launch.Tags.Split(',').ToList()
                 };
                 _testId.Update(requestUpdateTest);
 
