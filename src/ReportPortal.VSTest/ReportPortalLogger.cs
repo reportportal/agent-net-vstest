@@ -106,7 +106,6 @@ namespace ReportPortal.VSTest
 
                 _isRunStarted = true;
             }
-
             TestStarted(e.Result.TestCase.DisplayName ?? e.Result.TestCase.FullyQualifiedName, e.Result.StartTime.UtcDateTime);
 
             TestFinished(e.Result);
@@ -199,7 +198,7 @@ namespace ReportPortal.VSTest
                 var requestUpdateTest = new UpdateTestItemRequest
                 {
                     Description = description != null ? description.Value : String.Empty,
-                    Tags = result.TestCase.Traits.Select(x => x.Name).ToList()
+                    Tags = result.TestCase.Traits.Where(t=>t.Name.ToLower()=="Category".ToLower()).Select(x => x.Value).ToList()
                 };
                 _testId.Update(requestUpdateTest);
 

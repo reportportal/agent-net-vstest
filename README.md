@@ -27,3 +27,10 @@ To use the "agent-net-vstest” plugin you need to perform the following steps:
 - run the script build.cmd which will create “ReportPortal.VSTest.zip” archive file;
 - copy all files from “ReportPortal.VSTest.zip” to a folder “Extensions” which is in the same directory as VSTest.console.exe e.g. (c:/Program Files (x86)/ Microsoft Visual Studio/2017/Professional/Common7/IDE/CommonExtensions/Microsoft/TestWindow/);
 - run VSTest.console.exe with the following command-line option - "/logger:ReportPortalVSTest".
+
+# Tags
+If you want add tags for you test, please add "TestPropertyAttribute" with name "Category". For example:
+
+	[TestProperty("Category", "My tag")]
+        public void TestMethod()
+        {}
