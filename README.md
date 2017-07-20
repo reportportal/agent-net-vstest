@@ -29,13 +29,13 @@ To use the "agent-net-vstest” plugin you need to perform the following steps:
 - run VSTest.console.exe with the following command-line option - "/logger:ReportPortalVSTest".
 
 # Tags
-If use Microsoft.VisualStudio.TestTools.UnitTesting and you want add tags for you test, please add "TestPropertyAttribute" with name "Category". For example:
+If you use Microsoft.VisualStudio.TestTools.UnitTesting and you want add tags for you test, please add "TestPropertyAttribute" with name "Category". For example:
 
 	[TestProperty("Category", "My tag")]
         public void TestMethod()
         {}
 
-If use NUnit.Framework and you want add tags for you test, please add "TestCategoryAttribute". For example:
+If you use NUnit.Framework and you want add tags for you test, please add "TestCategoryAttribute". For example:
 
 	[TestCategory("My tag")]
         public void TestMethod()
