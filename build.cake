@@ -61,7 +61,8 @@ Task("Zip")
     new FilePath("./src/ReportPortal.VSTest/bin/Release/RestSharp.xml"),
     new FilePath("./src/ReportPortal.VSTest/bin/Release/Newtonsoft.Json.dll"),
     new FilePath("./src/ReportPortal.VSTest/bin/Release/ReportPortal.Client.dll"),
-    new FilePath("./src/ReportPortal.VSTest/bin/Release/ReportPortal.Shared.dll")
+    new FilePath("./src/ReportPortal.VSTest/bin/Release/ReportPortal.Shared.dll"),
+    new FilePath("./src/ReportPortal.VSTest/bin/Release/Microsoft.VisualStudio.TestPlatform.ObjectModel.dll"),
    };
   ZipCompress("./src/ReportPortal.VSTest/bin/Release/", "ReportPortal.VSTest.zip", files);
 }
