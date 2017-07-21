@@ -93,6 +93,18 @@ namespace ReportPortal.VSTest
                 {
                     get { return this["server"].ToString(); }
                 }
+
+                [ConfigurationProperty("username")]
+                public string Username
+                {
+                    get { return this["username"].ToString(); }
+                }
+
+                [ConfigurationProperty("password")]
+                public string Password
+                {
+                    get { return this["password"].ToString(); }
+                }
             }
         }
 
