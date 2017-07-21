@@ -34,6 +34,7 @@ namespace ReportPortal.VSTest
             if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
             {
                 proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
+                proxy.Credentials = new NetworkCredential(Configuration.ReportPortal.Server.Authentication.Username, password);
             }
 
             Bridge.Service = proxy == null
