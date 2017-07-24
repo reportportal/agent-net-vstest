@@ -105,6 +105,12 @@ namespace ReportPortal.VSTest
                 {
                     get { return this["password"].ToString(); }
                 }
+
+                [ConfigurationProperty("domain")]
+                public string Domain
+                {
+                    get { return this["domain"].ToString(); }
+                }
             }
         }
 
