@@ -1,5 +1,4 @@
-# agent-net-vstest
-Logger extension for vstest.console.exe
+[![Build status](https://ci.appveyor.com/api/projects/status/0bgatrnrtl1r1prm/branch/master?svg=true)](https://ci.appveyor.com/project/nvborisenko/agent-net-vstest/branch/master)
 
 # Installation
 Download **agent-net-vstest**
@@ -23,9 +22,9 @@ Example of config file:
 </configuration>
 ```
 # Plugin connection
-To use the "agent-net-vstestî plugin you need to perform the following steps:
-- run the script build.cmd which will create ìReportPortal.VSTest.zipî archive file;
-- copy all files from ìReportPortal.VSTest.zipî to a folder ìExtensionsî which is in the same directory as VSTest.console.exe e.g. (c:/Program Files (x86)/ Microsoft Visual Studio/2017/Professional/Common7/IDE/CommonExtensions/Microsoft/TestWindow/);
+To use the "agent-net-vstest‚Äù plugin you need to perform the following steps:
+- run the script build.cmd which will create ‚ÄúReportPortal.VSTest.zip‚Äù archive file;
+- copy all files from ‚ÄúReportPortal.VSTest.zip‚Äù to a folder ‚ÄúExtensions‚Äù which is in the same directory as VSTest.console.exe e.g. (c:/Program Files (x86)/ Microsoft Visual Studio/2017/Professional/Common7/IDE/CommonExtensions/Microsoft/TestWindow/);
 - run VSTest.console.exe with the following command-line option - "/logger:ReportPortalVSTest".
 
 # Tags
