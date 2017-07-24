@@ -37,7 +37,7 @@ namespace ReportPortal.VSTest
                 proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
                 if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
                 {
-                    proxy.Credentials = new NetworkCredential(Configuration.ReportPortal.Server.Authentication.Username, password);
+                    proxy.Credentials = new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
                 }
             }
 
