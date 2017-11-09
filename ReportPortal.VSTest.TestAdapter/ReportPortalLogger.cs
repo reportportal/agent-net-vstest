@@ -10,11 +10,12 @@ using ReportPortal.Shared;
 using ReportPortal.Client.Requests;
 using System.Diagnostics;
 using System.Linq;
+using System.IO;
 
-namespace ReportPortal.VSTest
+namespace ReportPortal.VSTest.TestAdapter
 {
-    [ExtensionUri("logger://ReportPortalVSTestLogger")]
-    [FriendlyName("ReportPortalVSTest")]
+    [ExtensionUri("logger://ReportPortal")]
+    [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLogger
     {
 
@@ -51,7 +52,6 @@ namespace ReportPortal.VSTest
             _statusMap[TestOutcome.Failed] = Status.Failed;
             _statusMap[TestOutcome.Skipped] = Status.Skipped;
             _statusMap[TestOutcome.NotFound] = Status.Skipped;
-            _statusMap[TestOutcome.None] = Status.None;
         }
 
 
@@ -75,7 +75,7 @@ namespace ReportPortal.VSTest
         /// </summary>
         private void TestMessageHandler(object sender, TestRunMessageEventArgs e)
         {
-            LogLevel logLevel = LogLevel.None;
+            LogLevel logLevel = LogLevel.Debug;
             switch (e.Level)
             {
                 case TestMessageLevel.Informational:
@@ -190,6 +190,19 @@ namespace ReportPortal.VSTest
 
         public void TestFinished(TestResult result)
         {
+            if (_testId != null)
+            {
+                foreach (var message in result.Messages)
+                {
+                    _testId.Log(new AddLogItemRequest
+                    {
+                        Time = DateTime.UtcNow,
+                        Level = LogLevel.Info,
+                        Text = message.Category + ":" + Environment.NewLine + message.Text
+                    });
+                }
+            }
+
             if (result.ErrorMessage != null && _testId != null)
             {
                 _testId.Log(new AddLogItemRequest

@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportPortal.VSTest", "ReportPortal.VSTest\ReportPortal.VSTest.csproj", "{A594167A-B127-4F5E-9B33-D02F68BA2EF1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportPortal.VSTest.TestAdapter", "ReportPortal.VSTest.TestAdapter\ReportPortal.VSTest.TestAdapter.csproj", "{A594167A-B127-4F5E-9B33-D02F68BA2EF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {30D33CAC-D3D1-46A9-A357-83842BDF8601}
 	EndGlobalSection
 EndGlobal

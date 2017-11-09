@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net451</TargetFrameworks>
+
+    <Authors>reportportal</Authors>
+    <Company>Report Portal</Company>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/reportportal/agent-vstest/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>http://reportportal.io</PackageProjectUrl>
+    <PackageIconUrl>https://reportportal.github.io/img/rp_logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/reportportal/agent-vstest</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageTags>reportportal vstest testing</PackageTags>
+    <Version>1.0.0-beta1</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0" />
+    <PackageReference Include="ReportPortal.Shared" Version="2.0.0-beta2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ReportPortal.VSTest.TestAdapter.dll.config.install.xdt" />
+    <Content Include="ReportPortal.VSTest.TestAdapter.dll.config.transform" />
+    <None Include="tools\init.ps1">
+      <Pack>true</Pack>
+      <PackagePath>tools\init.ps1</PackagePath>
+    </None>
+    <None Include="tools\install.ps1">
+      <Pack>true</Pack>
+      <PackagePath>tools\install.ps1</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

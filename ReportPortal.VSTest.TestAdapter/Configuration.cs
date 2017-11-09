@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Configuration;
 
-namespace ReportPortal.VSTest
+namespace ReportPortal.VSTest.TestAdapter
 {
     public static class Configuration
     {
