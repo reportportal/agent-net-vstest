@@ -30,3 +30,7 @@ To publish test results in real-tim to the ReportPortal specify `Logger` argumen
 ```cmd
 vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 ```
+## For dotNet CLI
+```cmd
+dotnet test MyTests.dll -a:. -l:ReportPortal
+```
