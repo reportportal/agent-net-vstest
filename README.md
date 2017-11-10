@@ -1,16 +1,18 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/0bgatrnrtl1r1prm/branch/master?svg=true)](https://ci.appveyor.com/project/nvborisenko/agent-net-vstest/branch/master)
 
 # Installation
-Download **agent-net-vstest**
+[![NuGet version](https://badge.fury.io/nu/reportportal.vstest.testadapter.svg)](https://badge.fury.io/nu/reportportal.vstest.testadapter)
+
+Install **ReportPortal.VSTest.TestAdapter** NuGet package into your project with tests.
 
 # Configuration
-The plugin has *ReportPortal.VSTest.dll.config* file with configuration of the integration.
+The plugin has *ReportPortal.VSTest.TestAdapter.dll.config* file with configuration of the integration.
 
 Example of config file:
 ```xml
 <configuration>
   <configSections>
-    <section name="reportPortal" type="ReportPortal.VSTest.ReportPortalSection, ReportPortal.VSTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
+    <section name="reportPortal" type="ReportPortal.VSTest.TestAdapter.ReportPortalSection, ReportPortal.VSTest.TestAdapter, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
   </configSections>
   <reportPortal enabled="true" logConsoleOutput="true">
     <server url="https://rp.epam.com/api/v1/" project="default_project">
@@ -21,21 +23,10 @@ Example of config file:
   </reportPortal>
 </configuration>
 ```
-# Plugin connection
-To use the "agent-net-vstest” plugin you need to perform the following steps:
-- run the script build.cmd which will create “ReportPortal.VSTest.zip” archive file;
-- copy all files from “ReportPortal.VSTest.zip” to a folder “Extensions” which is in the same directory as VSTest.console.exe e.g. (c:/Program Files (x86)/ Microsoft Visual Studio/2017/Professional/Common7/IDE/CommonExtensions/Microsoft/TestWindow/);
-- run VSTest.console.exe with the following command-line option - "/logger:ReportPortalVSTest".
+# Results publishing
+To publish test results in real-tim to the ReportPortal specify `Logger` argument.
 
-# Tags
-If you use Microsoft.VisualStudio.TestTools.UnitTesting and you want add tags for your test, please add "TestPropertyAttribute" with name "Category". For example:
-
-	[TestProperty("Category", "My tag")]
-        public void TestMethod()
-        {}
-
-If you use NUnit.Framework and you want add tags for your test, please add "TestCategoryAttribute". For example:
-
-	[TestCategory("My tag")]
-        public void TestMethod()
-        {}
+## For vstest.console.exe
+```cmd
+vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
+```
