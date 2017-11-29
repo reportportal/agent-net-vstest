@@ -11,13 +11,15 @@ using ReportPortal.Client.Requests;
 using System.Diagnostics;
 using System.Linq;
 using System.IO;
+using ReportPortal.VSTest.TestLogger.Configuration;
 
-namespace ReportPortal.VSTest.TestAdapter
+namespace ReportPortal.VSTest.TestLogger
 {
     [ExtensionUri("logger://ReportPortal")]
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLogger
     {
+        private Config Config;
 
         private readonly Dictionary<TestOutcome, Status> _statusMap = new Dictionary<TestOutcome, Status>();
 
@@ -26,27 +28,28 @@ namespace ReportPortal.VSTest.TestAdapter
 
         public ReportPortalLogger()
         {
-            var uri = new Uri(Configuration.ReportPortal.Server.Url);
-            var project = Configuration.ReportPortal.Server.Project;
-            var password = Configuration.ReportPortal.Server.Authentication.Password;
+            var configPath = Path.GetDirectoryName(new Uri(typeof(Config).Assembly.CodeBase).LocalPath) + "/ReportPortal.conf";
+            Config = Client.Converters.ModelSerializer.Deserialize<Config>(File.ReadAllText(configPath));
+
+            var uri = Config.Server.Url;
+            var project = Config.Server.Project;
+            var password = Config.Server.Authentication.Uuid;
 
             IWebProxy proxy = null;
 
-            if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
-            {
+            //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
+            //{
 
-                proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
-                if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
-                {
-                    proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
-                        ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
-                        : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
-                }
-            }
+            //    proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
+            //    if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
+            //    {
+            //        proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
+            //            ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
+            //            : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
+            //    }
+            //}
 
-            Bridge.Service = proxy == null
-                ? new Service(uri, project, password)
-                : new Service(uri, project, password, proxy);
+            Bridge.Service = new Service(uri, project, password);
 
             _statusMap[TestOutcome.Passed] = Status.Passed;
             _statusMap[TestOutcome.Failed] = Status.Failed;
@@ -134,15 +137,15 @@ namespace ReportPortal.VSTest.TestAdapter
         {
             var requestNewLaunch = new StartLaunchRequest
             {
-                Name = Configuration.ReportPortal.Launch.Name,
+                Name = Config.Launch.Name,
                 StartTime = result.StartTime.UtcDateTime
             };
-            if (Configuration.ReportPortal.Launch.DebugMode)
+            if (Config.Launch.IsDebugMode)
             {
                 requestNewLaunch.Mode = LaunchMode.Debug;
             }
 
-            requestNewLaunch.Tags = new List<string>(Configuration.ReportPortal.Launch.Tags.Split(','));
+            requestNewLaunch.Tags = Config.Launch.Tags;
 
             Bridge.Context.LaunchReporter = new LaunchReporter(Bridge.Service);
             Bridge.Context.LaunchReporter.Start(requestNewLaunch);
