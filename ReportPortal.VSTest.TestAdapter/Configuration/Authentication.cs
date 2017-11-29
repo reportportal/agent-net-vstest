@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReportPortal.VSTest.TestLogger.Configuration
+namespace ReportPortal.VSTest.Configuration
 {
     [DataContract]
     public class Authentication

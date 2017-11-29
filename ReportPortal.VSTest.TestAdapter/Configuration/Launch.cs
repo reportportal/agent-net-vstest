@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace ReportPortal.VSTest.TestLogger.Configuration
+namespace ReportPortal.VSTest.Configuration
 {
     [DataContract]
     public class Launch
