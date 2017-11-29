@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace ReportPortal.VSTest.Configuration
+namespace ReportPortal.VSTest.TestLogger.Configuration
 {
     [DataContract]
     public class Config

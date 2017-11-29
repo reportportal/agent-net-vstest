@@ -11,9 +11,9 @@ using ReportPortal.Client.Requests;
 using System.Diagnostics;
 using System.Linq;
 using System.IO;
-using ReportPortal.VSTest.Configuration;
+using ReportPortal.VSTest.TestLogger.Configuration;
 
-namespace ReportPortal.VSTest
+namespace ReportPortal.VSTest.TestLogger
 {
     [ExtensionUri("logger://ReportPortal")]
     [FriendlyName("ReportPortal")]

@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ReportPortal.VSTest.Configuration
+namespace ReportPortal.VSTest.TestLogger.Configuration
 {
     [DataContract]
     public class Server
