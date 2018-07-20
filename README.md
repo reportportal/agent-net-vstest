@@ -1,27 +1,31 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/0bgatrnrtl1r1prm/branch/master?svg=true)](https://ci.appveyor.com/project/nvborisenko/agent-net-vstest/branch/master)
 
 # Installation
-[![NuGet version](https://badge.fury.io/nu/reportportal.vstest.testadapter.svg)](https://badge.fury.io/nu/reportportal.vstest.testadapter)
+[![NuGet version](https://badge.fury.io/nu/ReportPortal.VSTest.TestLogger.svg)](https://badge.fury.io/nu/ReportPortal.VSTest.TestLogger)
 
-Install **ReportPortal.VSTest.TestAdapter** NuGet package into your project with tests.
+Install **ReportPortal.VSTest.TestLogger** NuGet package into your project with tests.
 
 # Configuration
-The plugin has *ReportPortal.VSTest.TestAdapter.dll.config* file with configuration of the integration.
+The plugin has *ReportPortal.conf* file with configuration of the integration.
 
 Example of config file:
-```xml
-<configuration>
-  <configSections>
-    <section name="reportPortal" type="ReportPortal.VSTest.TestAdapter.ReportPortalSection, ReportPortal.VSTest.TestAdapter, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"/>
-  </configSections>
-  <reportPortal enabled="true" logConsoleOutput="true">
-    <server url="https://rp.epam.com/api/v1/" project="default_project">
-      <authentication username="default" password="45c00b4f-a893-4365-89be-8c1b89e30ffb" />
-      <!-- <proxy server="host:port"/> -->
-    </server>
-    <launch name="VSTest Demo Launch" debugMode="true" tags="t1,t2" />
-  </reportPortal>
-</configuration>
+```json
+{
+  "enabled": true,
+  "server": {
+    "url": "https://rp.epam.com/api/v1/",
+    "project": "default_project",
+    "authentication": {
+      "uuid": "7853c7a9-7f27-43ea-835a-cab01355fd17"
+    }
+  },
+  "launch": {
+    "name": "VS Test Demo Launch",
+    "description": "this is description",
+    "debugMode": true,
+    "tags": [ "t1", "t2" ]
+  }
+}
 ```
 # Results publishing
 To publish test results in real-tim to the ReportPortal specify `Logger` argument.
