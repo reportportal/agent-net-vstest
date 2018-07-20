@@ -70,7 +70,6 @@ namespace ReportPortal.VSTest.TestLogger
             events.TestResult += TestResultHandler;
 
             events.TestRunComplete += TestRunCompleteHandler;
-
         }
 
         /// <summary>
@@ -93,15 +92,8 @@ namespace ReportPortal.VSTest.TestLogger
                     logLevel = LogLevel.Error;
                     break;
             }
-            try
-            {
-                Bridge.LogMessage(logLevel, e.Message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("\tException: " + ex.Message);
-                throw;
-            }
+
+            Bridge.LogMessage(logLevel, e.Message);
         }
 
         /// <summary>
@@ -221,7 +213,7 @@ namespace ReportPortal.VSTest.TestLogger
                 var requestUpdateTest = new UpdateTestItemRequest
                 {
                     Description = description != null ? description.Value : String.Empty,
-                    Tags = result.TestCase.Traits.Where(t=>t.Name.ToLower()=="Category".ToLower()).Select(x => x.Value).ToList()
+                    Tags = result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList()
                 };
                 _testId.Update(requestUpdateTest);
 
