@@ -191,7 +191,7 @@ namespace ReportPortal.VSTest.TestLogger
                 {
                     _testId.Log(new AddLogItemRequest
                     {
-                        Time = DateTime.UtcNow,
+                        Time = result.EndTime.UtcDateTime,
                         Level = LogLevel.Info,
                         Text = message.Category + ":" + Environment.NewLine + message.Text
                     });
@@ -202,7 +202,7 @@ namespace ReportPortal.VSTest.TestLogger
             {
                 _testId.Log(new AddLogItemRequest
                 {
-                    Time = result.EndTime.UtcDateTime.AddMilliseconds(1),
+                    Time = result.EndTime.UtcDateTime,
                     Level = LogLevel.Error,
                     Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
                 });
@@ -219,7 +219,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                 var requestFinishTest = new FinishTestItemRequest
                 {
-                    EndTime = DateTime.UtcNow,
+                    EndTime = result.EndTime.UtcDateTime,
                     Status = _statusMap[result.Outcome]
                 };
                 _testId.Finish(requestFinishTest);
@@ -230,7 +230,7 @@ namespace ReportPortal.VSTest.TestLogger
         {
             var requestFinishSuite = new FinishTestItemRequest
             {
-                EndTime = result.EndTime.UtcDateTime.AddMilliseconds(1),
+                EndTime = result.EndTime.UtcDateTime,
                 Status = _statusMap[result.Outcome]
             };
             _suiteId.Finish(requestFinishSuite);
