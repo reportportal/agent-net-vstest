@@ -191,7 +191,7 @@ namespace ReportPortal.VSTest.TestLogger
                 {
                     _testId.Log(new AddLogItemRequest
                     {
-                        Time = result.EndTime.UtcDateTime,
+                        Time = DateTime.UtcNow,
                         Level = LogLevel.Info,
                         Text = message.Category + ":" + Environment.NewLine + message.Text
                     });
