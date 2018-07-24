@@ -28,7 +28,7 @@ Example of config file:
 }
 ```
 # Results publishing
-To publish test results in real-tim to the ReportPortal specify `Logger` argument.
+To publish test results in real-time to the ReportPortal specify `Logger` argument.
 
 ## For vstest.console.exe
 ```cmd
@@ -36,5 +36,5 @@ vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 ```
 ## For dotNet CLI
 ```cmd
-dotnet test MyTests.dll -a:. -l:ReportPortal
+dotnet vstest MyTests.dll -a:. -l:ReportPortal
 ```
