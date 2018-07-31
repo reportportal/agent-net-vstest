@@ -36,5 +36,11 @@ vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 ```
 ## For dotNet CLI
 ```cmd
-dotnet vstest MyTests.dll -a:. -l:ReportPortal
+dotnet vstest MyTests.dll --logger:ReportPortal
 ```
+
+Some parameters can be overrided:
+```cmd
+--logger:ReportPortal;Launch.Name="My new launch name"
+```
+
