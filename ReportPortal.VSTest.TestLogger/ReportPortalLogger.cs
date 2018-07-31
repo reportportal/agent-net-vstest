@@ -59,7 +59,11 @@ namespace ReportPortal.VSTest.TestLogger
 
         public void Initialize(TestLoggerEvents events, string testRunDirectory)
         {
-            Initialize(events);
+            events.TestRunMessage += TestMessageHandler;
+
+            events.TestResult += TestResultHandler;
+
+            events.TestRunComplete += TestRunCompleteHandler;
         }
 
         /// <summary>
@@ -69,28 +73,21 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="testRunDirectory">Test Run Directory</param>
         public void Initialize(TestLoggerEvents events, Dictionary<string, string> parameters)
         {
-            Initialize(events);
-
-            foreach(var parameter in parameters)
+            foreach (var parameter in parameters)
             {
-                if (parameter.Key.ToLower() == "launch.name")
+                if (parameter.Key == "TestRunDirectory")
+                {
+                    Initialize(events, parameter.Value);
+                }
+                else if (parameter.Key.ToLower() == "launch.name")
                 {
                     Config.Launch.Name = parameter.Value;
                 }
                 else
                 {
-                    throw new ArgumentOutOfRangeException($"Unknown '{parameter.Key}' parameter.");
+                    throw new ArgumentException($"Unknown '{parameter.Key}' parameter.");
                 }
             }
-        }
-
-        private void Initialize(TestLoggerEvents events)
-        {
-            events.TestRunMessage += TestMessageHandler;
-
-            events.TestResult += TestResultHandler;
-
-            events.TestRunComplete += TestRunCompleteHandler;
         }
 
         /// <summary>
