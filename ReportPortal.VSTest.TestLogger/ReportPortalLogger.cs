@@ -17,7 +17,7 @@ namespace ReportPortal.VSTest.TestLogger
 {
     [ExtensionUri("logger://ReportPortal")]
     [FriendlyName("ReportPortal")]
-    public class ReportPortalLogger : ITestLogger
+    public class ReportPortalLogger : ITestLoggerWithParameters
     {
         private Config Config;
 
@@ -57,13 +57,34 @@ namespace ReportPortal.VSTest.TestLogger
             _statusMap[TestOutcome.NotFound] = Status.Skipped;
         }
 
+        public void Initialize(TestLoggerEvents events, string testRunDirectory)
+        {
+            Initialize(events);
+        }
 
         /// <summary>
         /// Initializes the Test Logger.
         /// </summary>
         /// <param name="events">Events that can be registered for.</param>
         /// <param name="testRunDirectory">Test Run Directory</param>
-        public void Initialize(TestLoggerEvents events, string testRunDirectory)
+        public void Initialize(TestLoggerEvents events, Dictionary<string, string> parameters)
+        {
+            Initialize(events);
+
+            foreach(var parameter in parameters)
+            {
+                if (parameter.Key.ToLower() == "launch.name")
+                {
+                    Config.Launch.Name = parameter.Value;
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException($"Unknown '{parameter.Key}' parameter.");
+                }
+            }
+        }
+
+        private void Initialize(TestLoggerEvents events)
         {
             events.TestRunMessage += TestMessageHandler;
 
