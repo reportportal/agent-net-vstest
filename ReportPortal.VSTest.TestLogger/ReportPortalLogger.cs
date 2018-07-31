@@ -57,6 +57,11 @@ namespace ReportPortal.VSTest.TestLogger
             _statusMap[TestOutcome.NotFound] = Status.Skipped;
         }
 
+        /// <summary>
+        /// Initializes the Test Logger.
+        /// </summary>
+        /// <param name="events">Events that can be registered for.</param>
+        /// <param name="testRunDirectory">Test Run Directory</param>
         public void Initialize(TestLoggerEvents events, string testRunDirectory)
         {
             events.TestRunMessage += TestMessageHandler;
@@ -70,7 +75,7 @@ namespace ReportPortal.VSTest.TestLogger
         /// Initializes the Test Logger.
         /// </summary>
         /// <param name="events">Events that can be registered for.</param>
-        /// <param name="testRunDirectory">Test Run Directory</param>
+        /// <param name="parameters">Configuration parameters for logger.</param>
         public void Initialize(TestLoggerEvents events, Dictionary<string, string> parameters)
         {
             foreach (var parameter in parameters)
