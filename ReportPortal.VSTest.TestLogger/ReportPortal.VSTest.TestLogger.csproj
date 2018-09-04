@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
 
     <Authors>reportportal</Authors>
     <Company>Report Portal</Company>
@@ -18,11 +18,8 @@
     <Content Include="ReportPortal.conf">
       <IncludeInPackage>true</IncludeInPackage>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <None Update="Install.ps1">
-      <PackagePath>tools</PackagePath>
-      <Pack>true</Pack>
-    </None>
   </ItemGroup>
 
   <ItemGroup>

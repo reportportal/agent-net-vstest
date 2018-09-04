@@ -55,6 +55,10 @@ namespace ReportPortal.VSTest.TestLogger
             _statusMap[TestOutcome.Failed] = Status.Failed;
             _statusMap[TestOutcome.Skipped] = Status.Skipped;
             _statusMap[TestOutcome.NotFound] = Status.Skipped;
+
+            _mimeTypes.Add("png", "image/png");
+            _mimeTypes.Add("jpeg", "image/jpeg");
+
         }
 
         /// <summary>
@@ -206,6 +210,9 @@ namespace ReportPortal.VSTest.TestLogger
             }
         }
 
+        private Dictionary<string, string> _mimeTypes = new Dictionary<string, string>();
+
+
         public void TestFinished(TestResult result)
         {
             if (_testId != null)
@@ -219,19 +226,43 @@ namespace ReportPortal.VSTest.TestLogger
                         Text = message.Category + ":" + Environment.NewLine + message.Text
                     });
                 }
-            }
 
-            if (result.ErrorMessage != null && _testId != null)
-            {
-                _testId.Log(new AddLogItemRequest
+                if (result.ErrorMessage != null)
                 {
-                    Time = result.EndTime.UtcDateTime,
-                    Level = LogLevel.Error,
-                    Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
-                });
-            }
-            if (_testId != null)
-            {
+                    _testId.Log(new AddLogItemRequest
+                    {
+                        Time = result.EndTime.UtcDateTime,
+                        Level = LogLevel.Error,
+                        Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
+                    });
+                }
+                
+                if (result.Attachments != null)
+                {
+                    foreach(var attachmentSet in result.Attachments)
+                    {
+                        foreach(var attachmentData in attachmentSet.Attachments)
+                        {
+                            var filePath = attachmentData.Uri.AbsolutePath;
+
+                            if (File.Exists(filePath))
+                            {
+                                var fileExtension = Path.GetExtension(filePath);
+                                var mimeType = "application/octet-stream";
+                                _mimeTypes.TryGetValue(fileExtension, out mimeType);
+
+                                _testId.Log(new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Info,
+                                    Text = Path.GetFileName(filePath),
+                                    Time = result.EndTime.UtcDateTime,
+                                    Attach = new Attach(Path.GetFileName(filePath), mimeType, File.ReadAllBytes(filePath))
+                                });
+                            }
+                        }
+                    }
+                }
+
                 var description = result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
                 var requestUpdateTest = new UpdateTestItemRequest
                 {
