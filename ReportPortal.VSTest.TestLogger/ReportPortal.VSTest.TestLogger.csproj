@@ -6,12 +6,12 @@
     
     <Authors>Nikolay Borisenko, Report Portal Community</Authors>
     <Description>VsTest extension for reporting test results into Report Portal</Description>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/reportportal/agent-vstest/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>http://reportportal.io</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/reportportal/agent-vstest/master/Logo.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/Logo.png</PackageIconUrl>
     
     <RepositoryType>GitHub</RepositoryType>
-    <RepositoryUrl>https://github.com/reportportal/agent-vstest</RepositoryUrl>
+    <RepositoryUrl>https://github.com/reportportal/agent-net-vstest</RepositoryUrl>
     
     <PackageTags>reportportal vstest testing</PackageTags>
   </PropertyGroup>
