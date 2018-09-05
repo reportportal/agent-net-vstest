@@ -6,11 +6,12 @@
 Install **ReportPortal.VSTest.TestLogger** NuGet package into your project with tests.
 
 # Configuration
-The plugin has *ReportPortal.conf* file with configuration of the integration.
+Add new **ReportPortal.config.json** file into your project with *Copy if newer* value for *Copy to Output Directory* property.
 
 Example of config file:
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/ReportPortal.VSTest.TestLogger/ReportPortal.config.schema",
   "enabled": true,
   "server": {
     "url": "https://rp.epam.com/api/v1/",
