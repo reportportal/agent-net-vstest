@@ -1,29 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-
-    <Authors>reportportal</Authors>
-    <Company>Report Portal</Company>
+    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
+    <Version>1.0.0</Version>
+    
+    <Authors>Nikolay Borisenko, Report Portal Community</Authors>
+    <Description>VsTest extension for reporting test results into Report Portal</Description>
     <PackageLicenseUrl>https://raw.githubusercontent.com/reportportal/agent-vstest/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>http://reportportal.io</PackageProjectUrl>
-    <PackageIconUrl>https://reportportal.github.io/img/rp_logo.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/reportportal/agent-vstest</RepositoryUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/reportportal/agent-vstest/master/Logo.png</PackageIconUrl>
+    
     <RepositoryType>GitHub</RepositoryType>
+    <RepositoryUrl>https://github.com/reportportal/agent-vstest</RepositoryUrl>
+    
     <PackageTags>reportportal vstest testing</PackageTags>
-    <Version>1.0.0</Version>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="ReportPortal.conf">
-      <IncludeInPackage>true</IncludeInPackage>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Update="Install.ps1">
-      <PackagePath>tools</PackagePath>
-      <Pack>true</Pack>
-    </None>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0" />
