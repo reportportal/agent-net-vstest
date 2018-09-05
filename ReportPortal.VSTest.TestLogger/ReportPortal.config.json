@@ -1,4 +1,5 @@
 ﻿{
+  "$schema": "ReportPortal.config.schema",
   "enabled": true,
   "server": {
     "url": "https://rp.epam.com/api/v1/",
@@ -11,6 +12,6 @@
     "name": "NUnit 3 Demo Launch",
     "description": "this is description",
     "debugMode": true,
-    "tags": [ "t1", "t2" ]
+    "tags": ["tag1", "tag2"]
   }
 }

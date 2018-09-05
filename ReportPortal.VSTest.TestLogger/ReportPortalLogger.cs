@@ -28,7 +28,7 @@ namespace ReportPortal.VSTest.TestLogger
 
         public ReportPortalLogger()
         {
-            var configPath = Path.GetDirectoryName(new Uri(typeof(Config).Assembly.CodeBase).LocalPath) + "/ReportPortal.conf";
+            var configPath = Path.GetDirectoryName(new Uri(typeof(Config).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
             Config = Client.Converters.ModelSerializer.Deserialize<Config>(File.ReadAllText(configPath));
 
             var uri = Config.Server.Url;
