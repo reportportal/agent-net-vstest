@@ -259,6 +259,15 @@ namespace ReportPortal.VSTest.TestLogger
                                     Attach = new Attach(Path.GetFileName(filePath), mimeType, File.ReadAllBytes(filePath))
                                 });
                             }
+                            else
+                            {
+                                _testId.Log(new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Warning,
+                                    Text = $"'{filePath}' file is not available.",
+                                    Time = result.EndTime.UtcDateTime,
+                                });
+                            }
                         }
                     }
                 }
