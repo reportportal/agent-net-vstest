@@ -40,8 +40,17 @@ vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 dotnet vstest MyTests.dll --logger:ReportPortal
 ```
 
-Some parameters can be overrided:
+# Parameters overriding
 ```cmd
 --logger:ReportPortal;Launch.Name="My new launch name"
 ```
+
+## Supported parameters
+- `Launch.Name`
+- `Launch.Description`
+- `Launch.Tags` - comma-separated list
+- `Launch.IsDebugMode` - true/false
+
+- `Server.Project`
+- `Server.Authentication.Uuid`
 

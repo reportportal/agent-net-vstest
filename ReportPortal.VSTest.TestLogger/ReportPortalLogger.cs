@@ -88,9 +88,35 @@ namespace ReportPortal.VSTest.TestLogger
                 {
                     Initialize(events, parameter.Value);
                 }
-                else if (parameter.Key.ToLower() == "launch.name")
+                else if (parameter.Key.ToLowerInvariant() == "launch.name")
                 {
                     Config.Launch.Name = parameter.Value;
+                }
+                else if (parameter.Key.ToLowerInvariant() == "launch.description")
+                {
+                    Config.Launch.Description = parameter.Value;
+                }
+                else if (parameter.Key.ToLowerInvariant() == "launch.tags")
+                {
+                    if (Config.Launch.Tags == null)
+                    {
+                        Config.Launch.Tags = new List<string>();
+                    }
+
+                    var tags = parameter.Value.Split(',');
+                    Config.Launch.Tags.AddRange(tags);
+                }
+                else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
+                {
+                    Config.Launch.IsDebugMode = bool.Parse(parameter.Value);
+                }
+                else if (parameter.Key.ToLowerInvariant() == "server.project")
+                {
+                    Config.Server.Project = parameter.Value;
+                }
+                else if (parameter.Key.ToLowerInvariant() == "server.authentication.uuid")
+                {
+                    Config.Server.Authentication.Uuid = parameter.Value;
                 }
                 else
                 {
