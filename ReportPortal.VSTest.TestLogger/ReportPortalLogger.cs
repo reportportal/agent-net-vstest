@@ -98,13 +98,7 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.tags")
                 {
-                    if (Config.Launch.Tags == null)
-                    {
-                        Config.Launch.Tags = new List<string>();
-                    }
-
-                    var tags = parameter.Value.Split(',');
-                    Config.Launch.Tags.AddRange(tags);
+                    Config.Launch.Tags = parameter.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
                 {
@@ -161,6 +155,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                 _isRunStarted = true;
             }
+
             TestStarted(e.Result.TestCase.DisplayName ?? e.Result.TestCase.FullyQualifiedName, e.Result.StartTime.UtcDateTime);
 
             TestFinished(e.Result);
@@ -183,6 +178,7 @@ namespace ReportPortal.VSTest.TestLogger
             var requestNewLaunch = new StartLaunchRequest
             {
                 Name = Config.Launch.Name,
+                Description = Config.Launch.Description,
                 StartTime = result.StartTime.UtcDateTime
             };
             if (Config.Launch.IsDebugMode)
@@ -262,12 +258,12 @@ namespace ReportPortal.VSTest.TestLogger
                         Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
                     });
                 }
-                
+
                 if (result.Attachments != null)
                 {
-                    foreach(var attachmentSet in result.Attachments)
+                    foreach (var attachmentSet in result.Attachments)
                     {
-                        foreach(var attachmentData in attachmentSet.Attachments)
+                        foreach (var attachmentData in attachmentSet.Attachments)
                         {
                             var filePath = attachmentData.Uri.AbsolutePath;
 
