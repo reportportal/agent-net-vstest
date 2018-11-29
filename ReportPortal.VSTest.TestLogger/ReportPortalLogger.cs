@@ -55,10 +55,6 @@ namespace ReportPortal.VSTest.TestLogger
             _statusMap[TestOutcome.Failed] = Status.Failed;
             _statusMap[TestOutcome.Skipped] = Status.Skipped;
             _statusMap[TestOutcome.NotFound] = Status.Skipped;
-
-            _mimeTypes.Add("png", "image/png");
-            _mimeTypes.Add("jpeg", "image/jpeg");
-
         }
 
         /// <summary>
@@ -68,8 +64,6 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="testRunDirectory">Test Run Directory</param>
         public void Initialize(TestLoggerEvents events, string testRunDirectory)
         {
-            events.TestRunMessage += TestMessageHandler;
-
             events.TestResult += TestResultHandler;
 
             events.TestRunComplete += TestRunCompleteHandler;
@@ -117,30 +111,6 @@ namespace ReportPortal.VSTest.TestLogger
                     throw new ArgumentException($"Unknown '{parameter.Key}' parameter.");
                 }
             }
-        }
-
-        /// <summary>
-        /// Called when a test message is received.
-        /// </summary>
-        private void TestMessageHandler(object sender, TestRunMessageEventArgs e)
-        {
-            LogLevel logLevel = LogLevel.Debug;
-            switch (e.Level)
-            {
-                case TestMessageLevel.Informational:
-                    logLevel = LogLevel.Info;
-                    break;
-
-                case TestMessageLevel.Warning:
-                    logLevel = LogLevel.Warning;
-                    break;
-
-                case TestMessageLevel.Error:
-                    logLevel = LogLevel.Error;
-                    break;
-            }
-
-            Bridge.LogMessage(logLevel, e.Message);
         }
 
         /// <summary>
@@ -232,21 +202,56 @@ namespace ReportPortal.VSTest.TestLogger
             }
         }
 
-        private Dictionary<string, string> _mimeTypes = new Dictionary<string, string>();
-
-
         public void TestFinished(TestResult result)
         {
             if (_testId != null)
             {
                 foreach (var message in result.Messages)
                 {
-                    _testId.Log(new AddLogItemRequest
+                    foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                     {
-                        Time = DateTime.UtcNow,
-                        Level = LogLevel.Info,
-                        Text = message.Category + ":" + Environment.NewLine + message.Text
-                    });
+                        var handled = false;
+
+                        try
+                        {
+                            var sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+
+                            var logRequest = new AddLogItemRequest
+                            {
+                                Level = sharedMessage.Level,
+                                Time = sharedMessage.Time,
+                                TestItemId = sharedMessage.TestItemId,
+                                Text = sharedMessage.Text
+                            };
+                            if (sharedMessage.Attach != null)
+                            {
+                                logRequest.Attach = new Attach
+                                {
+                                    Name = sharedMessage.Attach.Name,
+                                    MimeType = sharedMessage.Attach.MimeType,
+                                    Data = sharedMessage.Attach.Data
+                                };
+                            }
+
+                            _testId.Log(logRequest);
+
+                            handled = true;
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+
+                        if (!handled)
+                        {
+                            _testId.Log(new AddLogItemRequest
+                            {
+                                Time = DateTime.UtcNow,
+                                Level = LogLevel.Info,
+                                Text = line
+                            });
+                        }
+                    }
                 }
 
                 if (result.ErrorMessage != null)
@@ -270,15 +275,13 @@ namespace ReportPortal.VSTest.TestLogger
                             if (File.Exists(filePath))
                             {
                                 var fileExtension = Path.GetExtension(filePath);
-                                var mimeType = "application/octet-stream";
-                                _mimeTypes.TryGetValue(fileExtension, out mimeType);
 
                                 _testId.Log(new AddLogItemRequest
                                 {
                                     Level = LogLevel.Info,
                                     Text = Path.GetFileName(filePath),
                                     Time = result.EndTime.UtcDateTime,
-                                    Attach = new Attach(Path.GetFileName(filePath), mimeType, File.ReadAllBytes(filePath))
+                                    Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath))
                                 });
                             }
                             else
