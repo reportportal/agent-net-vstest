@@ -23,6 +23,8 @@ namespace ReportPortal.VSTest.TestLogger
 
         private readonly Dictionary<TestOutcome, Status> _statusMap = new Dictionary<TestOutcome, Status>();
 
+        private LaunchReporter _launchReporter;
+
         private bool _isRunStarted = false;
         private TestResult _lastTestResult;
 
@@ -158,8 +160,8 @@ namespace ReportPortal.VSTest.TestLogger
 
             requestNewLaunch.Tags = Config.Launch.Tags;
 
-            Bridge.Context.LaunchReporter = new LaunchReporter(Bridge.Service);
-            Bridge.Context.LaunchReporter.Start(requestNewLaunch);
+            _launchReporter = new LaunchReporter(Bridge.Service);
+            _launchReporter.Start(requestNewLaunch);
         }
 
         private TestReporter _suiteId;
@@ -174,7 +176,7 @@ namespace ReportPortal.VSTest.TestLogger
                 Type = TestItemType.Suite
             };
 
-            _suiteId = Bridge.Context.LaunchReporter.StartNewTestNode(requestNewSuite);
+            _suiteId = _launchReporter.StartNewTestNode(requestNewSuite);
         }
 
         private TestReporter _testId;
@@ -182,136 +184,123 @@ namespace ReportPortal.VSTest.TestLogger
 
         public void TestStarted(string testName, DateTime startTime)
         {
-            if (Bridge.Context.LaunchReporter != null)
+            var requestNewTest = new StartTestItemRequest
             {
-                var requestNewTest = new StartTestItemRequest
-                {
-                    Name = testName,
-                    StartTime = startTime,
-                    Type = TestItemType.Step
-                };
-                try
-                {
-                    _testId = _suiteId.StartNewTestNode(requestNewTest);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("\tException: " + ex.Message);
-                    throw;
-                }
-            }
+                Name = testName,
+                StartTime = startTime,
+                Type = TestItemType.Step
+            };
+
+            _testId = _suiteId.StartNewTestNode(requestNewTest);
         }
 
         public void TestFinished(TestResult result)
         {
-            if (_testId != null)
+            foreach (var message in result.Messages)
             {
-                foreach (var message in result.Messages)
+                foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                 {
-                    foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                    var handled = false;
+
+                    try
                     {
-                        var handled = false;
+                        var sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
 
-                        try
+                        var logRequest = new AddLogItemRequest
                         {
-                            var sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
-
-                            var logRequest = new AddLogItemRequest
+                            Level = sharedMessage.Level,
+                            Time = sharedMessage.Time,
+                            TestItemId = sharedMessage.TestItemId,
+                            Text = sharedMessage.Text
+                        };
+                        if (sharedMessage.Attach != null)
+                        {
+                            logRequest.Attach = new Attach
                             {
-                                Level = sharedMessage.Level,
-                                Time = sharedMessage.Time,
-                                TestItemId = sharedMessage.TestItemId,
-                                Text = sharedMessage.Text
+                                Name = sharedMessage.Attach.Name,
+                                MimeType = sharedMessage.Attach.MimeType,
+                                Data = sharedMessage.Attach.Data
                             };
-                            if (sharedMessage.Attach != null)
-                            {
-                                logRequest.Attach = new Attach
-                                {
-                                    Name = sharedMessage.Attach.Name,
-                                    MimeType = sharedMessage.Attach.MimeType,
-                                    Data = sharedMessage.Attach.Data
-                                };
-                            }
-
-                            _testId.Log(logRequest);
-
-                            handled = true;
                         }
-                        catch (Exception)
+
+                        _testId.Log(logRequest);
+
+                        handled = true;
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+
+                    if (!handled)
+                    {
+                        _testId.Log(new AddLogItemRequest
                         {
+                            Time = DateTime.UtcNow,
+                            Level = LogLevel.Info,
+                            Text = line
+                        });
+                    }
+                }
+            }
 
+            if (result.ErrorMessage != null)
+            {
+                _testId.Log(new AddLogItemRequest
+                {
+                    Time = result.EndTime.UtcDateTime,
+                    Level = LogLevel.Error,
+                    Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
+                });
+            }
+
+            if (result.Attachments != null)
+            {
+                foreach (var attachmentSet in result.Attachments)
+                {
+                    foreach (var attachmentData in attachmentSet.Attachments)
+                    {
+                        var filePath = attachmentData.Uri.AbsolutePath;
+
+                        if (File.Exists(filePath))
+                        {
+                            var fileExtension = Path.GetExtension(filePath);
+
+                            _testId.Log(new AddLogItemRequest
+                            {
+                                Level = LogLevel.Info,
+                                Text = Path.GetFileName(filePath),
+                                Time = result.EndTime.UtcDateTime,
+                                Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath))
+                            });
                         }
-
-                        if (!handled)
+                        else
                         {
                             _testId.Log(new AddLogItemRequest
                             {
-                                Time = DateTime.UtcNow,
-                                Level = LogLevel.Info,
-                                Text = line
+                                Level = LogLevel.Warning,
+                                Text = $"'{filePath}' file is not available.",
+                                Time = result.EndTime.UtcDateTime,
                             });
                         }
                     }
                 }
-
-                if (result.ErrorMessage != null)
-                {
-                    _testId.Log(new AddLogItemRequest
-                    {
-                        Time = result.EndTime.UtcDateTime,
-                        Level = LogLevel.Error,
-                        Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
-                    });
-                }
-
-                if (result.Attachments != null)
-                {
-                    foreach (var attachmentSet in result.Attachments)
-                    {
-                        foreach (var attachmentData in attachmentSet.Attachments)
-                        {
-                            var filePath = attachmentData.Uri.AbsolutePath;
-
-                            if (File.Exists(filePath))
-                            {
-                                var fileExtension = Path.GetExtension(filePath);
-
-                                _testId.Log(new AddLogItemRequest
-                                {
-                                    Level = LogLevel.Info,
-                                    Text = Path.GetFileName(filePath),
-                                    Time = result.EndTime.UtcDateTime,
-                                    Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath))
-                                });
-                            }
-                            else
-                            {
-                                _testId.Log(new AddLogItemRequest
-                                {
-                                    Level = LogLevel.Warning,
-                                    Text = $"'{filePath}' file is not available.",
-                                    Time = result.EndTime.UtcDateTime,
-                                });
-                            }
-                        }
-                    }
-                }
-
-                var description = result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
-                var requestUpdateTest = new UpdateTestItemRequest
-                {
-                    Description = description != null ? description.Value : String.Empty,
-                    Tags = result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList()
-                };
-                _testId.Update(requestUpdateTest);
-
-                var requestFinishTest = new FinishTestItemRequest
-                {
-                    EndTime = result.EndTime.UtcDateTime,
-                    Status = _statusMap[result.Outcome]
-                };
-                _testId.Finish(requestFinishTest);
             }
+
+            var description = result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
+            var requestUpdateTest = new UpdateTestItemRequest
+            {
+                Description = description != null ? description.Value : String.Empty,
+                Tags = result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList()
+            };
+            _testId.Update(requestUpdateTest);
+
+            var requestFinishTest = new FinishTestItemRequest
+            {
+                EndTime = result.EndTime.UtcDateTime,
+                Status = _statusMap[result.Outcome]
+            };
+            _testId.Finish(requestFinishTest);
         }
 
         public void SuiteFinished(TestResult result)
@@ -336,32 +325,28 @@ namespace ReportPortal.VSTest.TestLogger
 
         private void RunFinished()
         {
-            if (Bridge.Context.LaunchReporter != null)
+            var requestFinishLaunch = new FinishLaunchRequest
             {
-                var requestFinishLaunch = new FinishLaunchRequest
-                {
-                    EndTime = DateTime.UtcNow
-                };
+                EndTime = DateTime.UtcNow
+            };
 
-                Bridge.Context.LaunchReporter.Finish(requestFinishLaunch);
+            _launchReporter.Finish(requestFinishLaunch);
 
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                Console.WriteLine("Finishing to send results to Report Portal...");
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Console.WriteLine("Finishing to send results to Report Portal...");
 
-                try
-                {
-                    Bridge.Context.LaunchReporter.FinishTask.Wait(TimeSpan.FromMinutes(30));
-                }
-                catch (Exception exp)
-                {
-                    Console.WriteLine(exp);
-                    throw;
-                }
-
-                stopwatch.Stop();
-                Console.WriteLine($"Results are sent to Report Portal. Sync time: {stopwatch.Elapsed}");
-
+            try
+            {
+                _launchReporter.FinishTask.Wait(TimeSpan.FromMinutes(30));
             }
+            catch (Exception exp)
+            {
+                Console.WriteLine(exp);
+                throw;
+            }
+
+            stopwatch.Stop();
+            Console.WriteLine($"Results are sent to Report Portal. Sync time: {stopwatch.Elapsed}");
         }
     }
 }
