@@ -156,7 +156,7 @@ namespace ReportPortal.VSTest.TestLogger
             // add log messages
             foreach (var message in e.Result.Messages)
             {
-                foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     var handled = false;
 
