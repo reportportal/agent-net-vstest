@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-using System.Net;
 using System.Collections.Generic;
 using ReportPortal.Client.Models;
 using ReportPortal.Client;
@@ -19,26 +18,25 @@ namespace ReportPortal.VSTest.TestLogger
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLoggerWithParameters
     {
-        private Config Config;
+        private Config _config;
 
         private readonly Dictionary<TestOutcome, Status> _statusMap = new Dictionary<TestOutcome, Status>();
 
         private LaunchReporter _launchReporter;
 
-        private bool _isRunStarted = false;
-        private TestResult _lastTestResult;
+        // key: namespace
+        private Dictionary<string, TestReporter> _suitesflow = new Dictionary<string, TestReporter>();
 
         public ReportPortalLogger()
         {
             var configPath = Path.GetDirectoryName(new Uri(typeof(Config).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
-            Config = Client.Converters.ModelSerializer.Deserialize<Config>(File.ReadAllText(configPath));
+            _config = Client.Converters.ModelSerializer.Deserialize<Config>(File.ReadAllText(configPath));
 
-            var uri = Config.Server.Url;
-            var project = Config.Server.Project;
-            var password = Config.Server.Authentication.Uuid;
+            var uri = _config.Server.Url;
+            var project = _config.Server.Project;
+            var password = _config.Server.Authentication.Uuid;
 
-            IWebProxy proxy = null;
-
+            //IWebProxy proxy = null;
             //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
             //{
 
@@ -66,9 +64,9 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="testRunDirectory">Test Run Directory</param>
         public void Initialize(TestLoggerEvents events, string testRunDirectory)
         {
-            events.TestResult += TestResultHandler;
-
-            events.TestRunComplete += TestRunCompleteHandler;
+            events.TestRunStart += Events_TestRunStart;
+            events.TestResult += Events_TestResult;
+            events.TestRunComplete += Events_TestRunComplete;
         }
 
         /// <summary>
@@ -86,27 +84,27 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.name")
                 {
-                    Config.Launch.Name = parameter.Value;
+                    _config.Launch.Name = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.description")
                 {
-                    Config.Launch.Description = parameter.Value;
+                    _config.Launch.Description = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.tags")
                 {
-                    Config.Launch.Tags = parameter.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                    _config.Launch.Tags = parameter.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
                 {
-                    Config.Launch.IsDebugMode = bool.Parse(parameter.Value);
+                    _config.Launch.IsDebugMode = bool.Parse(parameter.Value);
                 }
                 else if (parameter.Key.ToLowerInvariant() == "server.project")
                 {
-                    Config.Server.Project = parameter.Value;
+                    _config.Server.Project = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "server.authentication.uuid")
                 {
-                    Config.Server.Authentication.Uuid = parameter.Value;
+                    _config.Server.Authentication.Uuid = parameter.Value;
                 }
                 else
                 {
@@ -115,88 +113,48 @@ namespace ReportPortal.VSTest.TestLogger
             }
         }
 
-        /// <summary>
-        /// Called when a test result is received.
-        /// </summary>
-        private void TestResultHandler(object sender, TestResultEventArgs e)
-        {
-            if (!_isRunStarted)
-            {
-                RunStarted(e.Result);
-                SuiteStarted("Default", e.Result);
-
-                _isRunStarted = true;
-            }
-
-            TestStarted(e.Result.TestCase.DisplayName ?? e.Result.TestCase.FullyQualifiedName, e.Result.StartTime.UtcDateTime);
-
-            TestFinished(e.Result);
-
-            _lastTestResult = e.Result;
-        }
-
-        /// <summary>
-        /// Called when a test run is completed.
-        /// </summary
-        private void TestRunCompleteHandler(object sender, TestRunCompleteEventArgs e)
-        {
-            SuiteFinished(_lastTestResult);
-            RunFinished();
-        }
-
-
-        public void RunStarted(TestResult result)
+        private void Events_TestRunStart(object sender, TestRunStartEventArgs e)
         {
             var requestNewLaunch = new StartLaunchRequest
             {
-                Name = Config.Launch.Name,
-                Description = Config.Launch.Description,
-                StartTime = result.StartTime.UtcDateTime
+                Name = _config.Launch.Name,
+                Description = _config.Launch.Description,
+                StartTime = DateTime.UtcNow
             };
-            if (Config.Launch.IsDebugMode)
+            if (_config.Launch.IsDebugMode)
             {
                 requestNewLaunch.Mode = LaunchMode.Debug;
             }
 
-            requestNewLaunch.Tags = Config.Launch.Tags;
+            requestNewLaunch.Tags = _config.Launch.Tags;
 
             _launchReporter = new LaunchReporter(Bridge.Service);
             _launchReporter.Start(requestNewLaunch);
         }
 
-        private TestReporter _suiteId;
-
-
-        public void SuiteStarted(string name, TestResult result)
+        private void Events_TestResult(object sender, TestResultEventArgs e)
         {
-            var requestNewSuite = new StartTestItemRequest
+            var fullName = e.Result.TestCase.FullyQualifiedName;
+
+            var fullPath = fullName.Substring(0, fullName.Length - fullName.Split('.').Last().Length - 1);
+
+            var suiteReporter = GetOrStartSuiteNode(fullPath);
+
+            // start test node
+            var description = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
+            var startTestRequest = new StartTestItemRequest
             {
-                Name = name,
-                StartTime = result.StartTime.UtcDateTime,
-                Type = TestItemType.Suite
-            };
-
-            _suiteId = _launchReporter.StartNewTestNode(requestNewSuite);
-        }
-
-        private TestReporter _testId;
-
-
-        public void TestStarted(string testName, DateTime startTime)
-        {
-            var requestNewTest = new StartTestItemRequest
-            {
-                Name = testName,
-                StartTime = startTime,
+                Name = e.Result.TestCase.DisplayName ?? e.Result.TestCase.FullyQualifiedName.Split('.').Last(),
+                Description = description?.Value,
+                Tags = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList(),
+                StartTime = e.Result.StartTime.UtcDateTime,
                 Type = TestItemType.Step
             };
 
-            _testId = _suiteId.StartNewTestNode(requestNewTest);
-        }
+            var testReporter = suiteReporter.StartNewTestNode(startTestRequest);
 
-        public void TestFinished(TestResult result)
-        {
-            foreach (var message in result.Messages)
+            // add log messages
+            foreach (var message in e.Result.Messages)
             {
                 foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                 {
@@ -223,7 +181,7 @@ namespace ReportPortal.VSTest.TestLogger
                             };
                         }
 
-                        _testId.Log(logRequest);
+                        testReporter.Log(logRequest);
 
                         handled = true;
                     }
@@ -234,7 +192,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                     if (!handled)
                     {
-                        _testId.Log(new AddLogItemRequest
+                        testReporter.Log(new AddLogItemRequest
                         {
                             Time = DateTime.UtcNow,
                             Level = LogLevel.Info,
@@ -244,19 +202,19 @@ namespace ReportPortal.VSTest.TestLogger
                 }
             }
 
-            if (result.ErrorMessage != null)
+            if (e.Result.ErrorMessage != null)
             {
-                _testId.Log(new AddLogItemRequest
+                testReporter.Log(new AddLogItemRequest
                 {
-                    Time = result.EndTime.UtcDateTime,
+                    Time = e.Result.EndTime.UtcDateTime,
                     Level = LogLevel.Error,
-                    Text = result.ErrorMessage + "\n" + result.ErrorStackTrace
+                    Text = e.Result.ErrorMessage + "\n" + e.Result.ErrorStackTrace
                 });
             }
 
-            if (result.Attachments != null)
+            if (e.Result.Attachments != null)
             {
-                foreach (var attachmentSet in result.Attachments)
+                foreach (var attachmentSet in e.Result.Attachments)
                 {
                     foreach (var attachmentData in attachmentSet.Attachments)
                     {
@@ -266,65 +224,60 @@ namespace ReportPortal.VSTest.TestLogger
                         {
                             var fileExtension = Path.GetExtension(filePath);
 
-                            _testId.Log(new AddLogItemRequest
+                            testReporter.Log(new AddLogItemRequest
                             {
                                 Level = LogLevel.Info,
                                 Text = Path.GetFileName(filePath),
-                                Time = result.EndTime.UtcDateTime,
+                                Time = e.Result.EndTime.UtcDateTime,
                                 Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath))
                             });
                         }
                         else
                         {
-                            _testId.Log(new AddLogItemRequest
+                            testReporter.Log(new AddLogItemRequest
                             {
                                 Level = LogLevel.Warning,
                                 Text = $"'{filePath}' file is not available.",
-                                Time = result.EndTime.UtcDateTime,
+                                Time = e.Result.EndTime.UtcDateTime,
                             });
                         }
                     }
                 }
             }
 
-            var description = result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
-            var requestUpdateTest = new UpdateTestItemRequest
+            // finish test
+
+            var finishTestRequest = new FinishTestItemRequest
             {
-                Description = description != null ? description.Value : String.Empty,
-                Tags = result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList()
+                EndTime = e.Result.EndTime.UtcDateTime,
+                Status = _statusMap[e.Result.Outcome]
             };
-            _testId.Update(requestUpdateTest);
 
-            var requestFinishTest = new FinishTestItemRequest
+            testReporter.Finish(finishTestRequest);
+        }
+
+        private void Events_TestRunComplete(object sender, TestRunCompleteEventArgs e)
+        {
+            //TODO: apply smarter way to finish suites in real-time tests execution
+            //finish suites
+            while(_suitesflow.Count != 0)
             {
-                EndTime = result.EndTime.UtcDateTime,
-                Status = _statusMap[result.Outcome]
-            };
-            _testId.Finish(requestFinishTest);
-        }
+                var deeperKey = _suitesflow.Keys.OrderBy(s => s.Split('.').Length).Last();
 
-        public void SuiteFinished(TestResult result)
-        {
-            var requestFinishSuite = new FinishTestItemRequest
-            {
-                EndTime = result.EndTime.UtcDateTime,
-                Status = _statusMap[result.Outcome]
-            };
-            _suiteId.Finish(requestFinishSuite);
-        }
+                var deeperSuite = _suitesflow[deeperKey];
 
-        public void RunFinished(TestResult result)
-        {
-            RunFinished();
-        }
+                var finishSuiteRequest = new FinishTestItemRequest
+                {
+                    EndTime = DateTime.UtcNow,
+                    //TODO: identify correct suite status based on inner nodes
+                    Status = Status.Passed
+                };
 
-        public void RunFinished(Exception exception)
-        {
-            RunFinished();
-        }
+                deeperSuite.Finish(finishSuiteRequest);
+                _suitesflow.Remove(deeperKey);
+            }
 
-        private void RunFinished()
-        {
+            // finish launch
             var requestFinishLaunch = new FinishLaunchRequest
             {
                 EndTime = DateTime.UtcNow
@@ -333,7 +286,7 @@ namespace ReportPortal.VSTest.TestLogger
             _launchReporter.Finish(requestFinishLaunch);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
-            Console.WriteLine("Finishing to send results to Report Portal...");
+            Console.Write("Finishing to send results to Report Portal...");
 
             try
             {
@@ -346,7 +299,60 @@ namespace ReportPortal.VSTest.TestLogger
             }
 
             stopwatch.Stop();
-            Console.WriteLine($"Results are sent to Report Portal. Sync time: {stopwatch.Elapsed}");
+            Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
+        }
+
+        private TestReporter GetOrStartSuiteNode(string fullName)
+        {
+            if (_suitesflow.ContainsKey(fullName))
+            {
+                return _suitesflow[fullName];
+            }
+            else
+            {
+                var parts = fullName.Split('.');
+
+                if (parts.Length == 1)
+                {
+                    if (_suitesflow.ContainsKey(parts[0]))
+                    {
+                        return _suitesflow[parts[0]];
+                    }
+                    else
+                    {
+                        // create root
+                        var startSuiteRequest = new StartTestItemRequest
+                        {
+                            Name = fullName,
+                            StartTime = DateTime.UtcNow,
+                            Type = TestItemType.Suite
+                        };
+
+                        var rootSuite = _launchReporter.StartNewTestNode(startSuiteRequest);
+
+                        _suitesflow[fullName] = rootSuite;
+                        return rootSuite;
+                    }
+                }
+                else
+                {
+                    var parent = GetOrStartSuiteNode(string.Join(".", parts.Take(parts.Length - 1)));
+
+                    // create
+                    var startSuiteRequest = new StartTestItemRequest
+                    {
+                        Name = parts.Last(),
+                        StartTime = DateTime.UtcNow,
+                        Type = TestItemType.Suite
+                    };
+
+                    var suite = parent.StartNewTestNode(startSuiteRequest);
+
+                    _suitesflow[fullName] = suite;
+
+                    return suite;
+                }
+            }
         }
     }
 }
