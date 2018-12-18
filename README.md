@@ -28,15 +28,16 @@ Example of config file:
   }
 }
 ```
-# Results publishing
-To publish test results in real-time to the ReportPortal specify `Logger` argument.
+# Tests execution
+To execute tests with real-time reporting, specify `Logger` argument.
 
 ## For vstest.console.exe
 ```cmd
 vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 ```
-## For dotNet CLI
+## For dotnet CLI
 ```cmd
+dotnet test -l:ReportPortal
 dotnet vstest MyTests.dll --logger:ReportPortal
 ```
 
