@@ -3,7 +3,7 @@
   <PropertyGroup>
 
     <_ReportPortal_VsTestLogger_Runtime Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' ">netstandard2.0</_ReportPortal_VsTestLogger_Runtime>
-    <_ReportPortal_VsTestLogger_Runtime Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">net45</_ReportPortal_VsTestLogger_Runtime>
+    <_ReportPortal_VsTestLogger_Runtime Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">net451</_ReportPortal_VsTestLogger_Runtime>
     <_ReportPortal_VsTestLogger_Runtime_Path>$(MSBuildThisFileDirectory)\..\lib\$(_ReportPortal_VsTestLogger_Runtime)\ReportPortal.VSTest.TestLogger.dll</_ReportPortal_VsTestLogger_Runtime_Path>
 
   </PropertyGroup>
