@@ -10,7 +10,9 @@ using ReportPortal.Client.Requests;
 using System.Diagnostics;
 using System.Linq;
 using System.IO;
-using ReportPortal.VSTest.TestLogger.Configuration;
+using ReportPortal.Shared.Configuration;
+using ReportPortal.Shared.Reporter;
+using ReportPortal.Shared.Configuration.Providers;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -18,23 +20,23 @@ namespace ReportPortal.VSTest.TestLogger
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLoggerWithParameters
     {
-        private Config _config;
+        private IConfiguration _config;
 
         private readonly Dictionary<TestOutcome, Status> _statusMap = new Dictionary<TestOutcome, Status>();
 
-        private LaunchReporter _launchReporter;
+        private ILaunchReporter _launchReporter;
 
         // key: namespace
-        private Dictionary<string, TestReporter> _suitesflow = new Dictionary<string, TestReporter>();
+        private Dictionary<string, ITestReporter> _suitesflow = new Dictionary<string, ITestReporter>();
 
         public ReportPortalLogger()
         {
-            var configPath = Path.GetDirectoryName(new Uri(typeof(Config).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
-            _config = Client.Converters.ModelSerializer.Deserialize<Config>(File.ReadAllText(configPath));
+            var jsonPath = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
+            _config = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables().Build();
 
-            var uri = _config.Server.Url;
-            var project = _config.Server.Project;
-            var password = _config.Server.Authentication.Uuid;
+            var uri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
+            var project = _config.GetValue<string>(ConfigurationPath.ServerProject);
+            var password = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
 
             //IWebProxy proxy = null;
             //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
@@ -49,7 +51,7 @@ namespace ReportPortal.VSTest.TestLogger
             //    }
             //}
 
-            Bridge.Service = new Service(uri, project, password);
+            Bridge.Service = new Service(new Uri(uri), project, password);
 
             _statusMap[TestOutcome.Passed] = Status.Passed;
             _statusMap[TestOutcome.Failed] = Status.Failed;
@@ -84,27 +86,27 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.name")
                 {
-                    _config.Launch.Name = parameter.Value;
+                    _config.Values[ConfigurationPath.LaunchName] = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.description")
                 {
-                    _config.Launch.Description = parameter.Value;
+                    _config.Values[ConfigurationPath.LaunchDescription] = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.tags")
                 {
-                    _config.Launch.Tags = parameter.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToList();
+                    _config.Values[ConfigurationPath.LaunchTags] = string.Join(";", parameter.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()));
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
                 {
-                    _config.Launch.IsDebugMode = bool.Parse(parameter.Value);
+                    _config.Values[ConfigurationPath.LaunchDebugMode] = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "server.project")
                 {
-                    _config.Server.Project = parameter.Value;
+                    _config.Values[ConfigurationPath.ServerProject] = parameter.Value;
                 }
                 else if (parameter.Key.ToLowerInvariant() == "server.authentication.uuid")
                 {
-                    _config.Server.Authentication.Uuid = parameter.Value;
+                    _config.Values[ConfigurationPath.ServerAuthenticationUuid] = parameter.Value;
                 }
                 else
                 {
@@ -117,16 +119,16 @@ namespace ReportPortal.VSTest.TestLogger
         {
             var requestNewLaunch = new StartLaunchRequest
             {
-                Name = _config.Launch.Name,
-                Description = _config.Launch.Description,
+                Name = _config.GetValue(ConfigurationPath.LaunchName, "VsTest Launch"),
+                Description = _config.GetValue(ConfigurationPath.LaunchDescription, ""),
                 StartTime = DateTime.UtcNow
             };
-            if (_config.Launch.IsDebugMode)
+            if (_config.GetValue(ConfigurationPath.LaunchDebugMode, false))
             {
                 requestNewLaunch.Mode = LaunchMode.Debug;
             }
 
-            requestNewLaunch.Tags = _config.Launch.Tags;
+            requestNewLaunch.Tags = _config.GetValues(ConfigurationPath.LaunchTags, new List<string>()).ToList();
 
             _launchReporter = new LaunchReporter(Bridge.Service);
             _launchReporter.Start(requestNewLaunch);
@@ -151,7 +153,7 @@ namespace ReportPortal.VSTest.TestLogger
                 Type = TestItemType.Step
             };
 
-            var testReporter = suiteReporter.StartNewTestNode(startTestRequest);
+            var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
 
             // add log messages
             foreach (var message in e.Result.Messages)
@@ -302,7 +304,7 @@ namespace ReportPortal.VSTest.TestLogger
             Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
         }
 
-        private TestReporter GetOrStartSuiteNode(string fullName)
+        private ITestReporter GetOrStartSuiteNode(string fullName)
         {
             if (_suitesflow.ContainsKey(fullName))
             {
@@ -328,7 +330,7 @@ namespace ReportPortal.VSTest.TestLogger
                             Type = TestItemType.Suite
                         };
 
-                        var rootSuite = _launchReporter.StartNewTestNode(startSuiteRequest);
+                        var rootSuite = _launchReporter.StartChildTestReporter(startSuiteRequest);
 
                         _suitesflow[fullName] = rootSuite;
                         return rootSuite;
@@ -346,7 +348,7 @@ namespace ReportPortal.VSTest.TestLogger
                         Type = TestItemType.Suite
                     };
 
-                    var suite = parent.StartNewTestNode(startSuiteRequest);
+                    var suite = parent.StartChildTestReporter(startSuiteRequest);
 
                     _suitesflow[fullName] = suite;
 
