@@ -20,6 +20,7 @@ namespace ReportPortal.VSTest.TestLogger
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLoggerWithParameters
     {
+        private IConfigurationBuilder _configBuilder;
         private IConfiguration _config;
 
         private readonly Dictionary<TestOutcome, Status> _statusMap = new Dictionary<TestOutcome, Status>();
@@ -32,8 +33,26 @@ namespace ReportPortal.VSTest.TestLogger
         public ReportPortalLogger()
         {
             var jsonPath = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
-            _config = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables().Build();
+            _configBuilder = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables();
 
+            _statusMap[TestOutcome.Passed] = Status.Passed;
+            _statusMap[TestOutcome.Failed] = Status.Failed;
+            _statusMap[TestOutcome.Skipped] = Status.Skipped;
+            _statusMap[TestOutcome.NotFound] = Status.Skipped;
+        }
+
+        /// <summary>
+        /// Initializes the Test Logger.
+        /// </summary>
+        /// <param name="events">Events that can be registered for.</param>
+        /// <param name="testRunDirectory">Test Run Directory</param>
+        public void Initialize(TestLoggerEvents events, string testRunDirectory)
+        {
+            events.TestRunStart += Events_TestRunStart;
+            events.TestResult += Events_TestResult;
+            events.TestRunComplete += Events_TestRunComplete;
+
+            _config = _configBuilder.Build();
             var uri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
             var project = _config.GetValue<string>(ConfigurationPath.ServerProject);
             var password = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
@@ -52,23 +71,6 @@ namespace ReportPortal.VSTest.TestLogger
             //}
 
             Bridge.Service = new Service(new Uri(uri), project, password);
-
-            _statusMap[TestOutcome.Passed] = Status.Passed;
-            _statusMap[TestOutcome.Failed] = Status.Failed;
-            _statusMap[TestOutcome.Skipped] = Status.Skipped;
-            _statusMap[TestOutcome.NotFound] = Status.Skipped;
-        }
-
-        /// <summary>
-        /// Initializes the Test Logger.
-        /// </summary>
-        /// <param name="events">Events that can be registered for.</param>
-        /// <param name="testRunDirectory">Test Run Directory</param>
-        public void Initialize(TestLoggerEvents events, string testRunDirectory)
-        {
-            events.TestRunStart += Events_TestRunStart;
-            events.TestResult += Events_TestResult;
-            events.TestRunComplete += Events_TestRunComplete;
         }
 
         /// <summary>
@@ -78,41 +80,9 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="parameters">Configuration parameters for logger.</param>
         public void Initialize(TestLoggerEvents events, Dictionary<string, string> parameters)
         {
-            foreach (var parameter in parameters)
-            {
-                if (parameter.Key == "TestRunDirectory")
-                {
-                    Initialize(events, parameter.Value);
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.name")
-                {
-                    _config.Values[ConfigurationPath.LaunchName] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.description")
-                {
-                    _config.Values[ConfigurationPath.LaunchDescription] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.tags")
-                {
-                    _config.Values[ConfigurationPath.LaunchTags] = string.Join(";", parameter.Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()));
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
-                {
-                    _config.Values[ConfigurationPath.LaunchDebugMode] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "server.project")
-                {
-                    _config.Values[ConfigurationPath.ServerProject] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "server.authentication.uuid")
-                {
-                    _config.Values[ConfigurationPath.ServerAuthenticationUuid] = parameter.Value;
-                }
-                else
-                {
-                    throw new ArgumentException($"Unknown '{parameter.Key}' parameter.");
-                }
-            }
+            _configBuilder.Add(new LoggerConfigurationProvider(parameters));
+
+            Initialize(events, parameters.Single(p => p.Key == "TestRunDirectory").Value);
         }
 
         private void Events_TestRunStart(object sender, TestRunStartEventArgs e)
@@ -262,7 +232,7 @@ namespace ReportPortal.VSTest.TestLogger
         {
             //TODO: apply smarter way to finish suites in real-time tests execution
             //finish suites
-            while(_suitesflow.Count != 0)
+            while (_suitesflow.Count != 0)
             {
                 var deeperKey = _suitesflow.Keys.OrderBy(s => s.Split('.').Length).Last();
 
