@@ -31,15 +31,17 @@ Example of config file:
 # Tests execution
 To execute tests with real-time reporting, specify `Logger` argument.
 
-## For vstest.console.exe
+## vstest.console.exe
 ```cmd
 vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 ```
-## For dotnet CLI
+## dotnet vstest
 ```cmd
 dotnet test -l:ReportPortal
 dotnet vstest MyTests.dll --logger:ReportPortal
 ```
+
+> In case if you see `Could not find a test logger with AssemblyQualifiedName, URI or FriendlyName 'ReportPortal'.` error message after executing tests, and your target framework is **netcoreapp**, it's recommended to make `dotnet publish` before executing tests. It's needed to copy TestLogger with dependencies to output folder, so vstest is able to discover TestLogger.
 
 # Parameters overriding
 ```cmd
