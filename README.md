@@ -35,13 +35,11 @@ To execute tests with real-time reporting, specify `Logger` argument.
 ```cmd
 vstest.console.exe MyTests.dll /TestAdapterPath:. /Logger:ReportPortal
 ```
-## dotnet vstest
+## dotnet test
 ```cmd
 dotnet test -l:ReportPortal
 dotnet vstest MyTests.dll --logger:ReportPortal
 ```
-
-> In case if you see `Could not find a test logger with AssemblyQualifiedName, URI or FriendlyName 'ReportPortal'.` error message after executing tests, and your target framework is **netcoreapp**, it's recommended to make `dotnet publish` before executing tests. It's needed to copy TestLogger with dependencies to output folder, so vstest is able to discover TestLogger.
 
 # Parameters overriding
 ```cmd
@@ -57,3 +55,11 @@ dotnet vstest MyTests.dll --logger:ReportPortal
 - `Server.Project`
 - `Server.Authentication.Uuid`
 
+# Environment variables
+It's possible to override parameters via environment variables.
+```cmd
+set reportportal_launch_name="My new launch name"
+# execute tests
+```
+
+`reportportal_` prefix is used for naming variables, and `_` is used as delimeter. For example to override `Server.Authentication.Uuid` parameter, we need specify `ReportPortal_Server_Authentication_Uuid` in environment variables. 
