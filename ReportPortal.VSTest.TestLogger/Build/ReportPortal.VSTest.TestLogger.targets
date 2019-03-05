@@ -6,6 +6,7 @@
     <_ReportPortal_VsTestLogger_Runtime Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' ">netstandard2.0</_ReportPortal_VsTestLogger_Runtime>
     <_ReportPortal_VsTestLogger_Runtime Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">net451</_ReportPortal_VsTestLogger_Runtime>
     <_ReportPortal_VsTestLogger_Runtime_Path>$(MSBuildThisFileDirectory)\..\lib\$(_ReportPortal_VsTestLogger_Runtime)\ReportPortal.VSTest.TestLogger.dll</_ReportPortal_VsTestLogger_Runtime_Path>
+    <_ReportPortal_VsTestLogger_Runtime_Pdb_Path>$(MSBuildThisFileDirectory)\..\lib\$(_ReportPortal_VsTestLogger_Runtime)\ReportPortal.VSTest.TestLogger.pdb</_ReportPortal_VsTestLogger_Runtime_Pdb_Path>
 
   </PropertyGroup>
 
