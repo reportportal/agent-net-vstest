@@ -5,28 +5,31 @@
     <Version>1.0.0</Version>
     
     <Authors>Nikolay Borisenko, Report Portal Community</Authors>
-    <Description>VsTest extension for reporting test results into Report Portal</Description>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/LICENSE</PackageLicenseUrl>
+    <Description>VsTest extension for reporting test results into http://reportportal.io</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>http://reportportal.io</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/Logo.png</PackageIconUrl>
     
     <RepositoryType>GitHub</RepositoryType>
     <RepositoryUrl>https://github.com/reportportal/agent-net-vstest</RepositoryUrl>
     
-    <PackageTags>reportportal vstest testing</PackageTags>
+    <PackageTags>report reportportal vstest testing</PackageTags>
 
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0" />
-    <PackageReference Include="ReportPortal.Shared" Version="2.1.0">
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0">
+      <PrivateAssets>all;</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="ReportPortal.Shared" Version="2.1.4">
       <PrivateAssets>contentfiles;analyzers;</PrivateAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Build\**" Pack="true" PackagePath="build\" />
+    <None Include="..\*.props" Pack="true" PackagePath="build\" Visible="false" />
+    <None Include="..\*.targets" Pack="true" PackagePath="build\" Visible="false" />
   </ItemGroup>
 
 </Project>
