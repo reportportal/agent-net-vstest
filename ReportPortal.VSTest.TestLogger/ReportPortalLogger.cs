@@ -126,50 +126,55 @@ namespace ReportPortal.VSTest.TestLogger
             var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
 
             // add log messages
-            foreach (var message in e.Result.Messages)
+            if (e.Result.Messages != null)
             {
-                foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                foreach (var message in e.Result.Messages)
                 {
-                    var handled = false;
-
-                    try
+                    if (message.Text == null) continue;
+                    foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                     {
-                        var sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+                        var handled = false;
 
-                        var logRequest = new AddLogItemRequest
+                        try
                         {
-                            Level = sharedMessage.Level,
-                            Time = sharedMessage.Time,
-                            TestItemId = sharedMessage.TestItemId,
-                            Text = sharedMessage.Text
-                        };
-                        if (sharedMessage.Attach != null)
-                        {
-                            logRequest.Attach = new Attach
+                            var sharedMessage =
+                                Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+
+                            var logRequest = new AddLogItemRequest
                             {
-                                Name = sharedMessage.Attach.Name,
-                                MimeType = sharedMessage.Attach.MimeType,
-                                Data = sharedMessage.Attach.Data
+                                Level = sharedMessage.Level,
+                                Time = sharedMessage.Time,
+                                TestItemId = sharedMessage.TestItemId,
+                                Text = sharedMessage.Text
                             };
+                            if (sharedMessage.Attach != null)
+                            {
+                                logRequest.Attach = new Attach
+                                {
+                                    Name = sharedMessage.Attach.Name,
+                                    MimeType = sharedMessage.Attach.MimeType,
+                                    Data = sharedMessage.Attach.Data
+                                };
+                            }
+
+                            testReporter.Log(logRequest);
+
+                            handled = true;
+                        }
+                        catch (Exception)
+                        {
+
                         }
 
-                        testReporter.Log(logRequest);
-
-                        handled = true;
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-
-                    if (!handled)
-                    {
-                        testReporter.Log(new AddLogItemRequest
+                        if (!handled)
                         {
-                            Time = DateTime.UtcNow,
-                            Level = LogLevel.Info,
-                            Text = line
-                        });
+                            testReporter.Log(new AddLogItemRequest
+                            {
+                                Time = DateTime.UtcNow,
+                                Level = LogLevel.Info,
+                                Text = line
+                            });
+                        }
                     }
                 }
             }
