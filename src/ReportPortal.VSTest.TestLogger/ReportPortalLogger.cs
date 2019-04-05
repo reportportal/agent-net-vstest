@@ -48,29 +48,34 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="testRunDirectory">Test Run Directory</param>
         public void Initialize(TestLoggerEvents events, string testRunDirectory)
         {
-            events.TestRunStart += Events_TestRunStart;
-            events.TestResult += Events_TestResult;
-            events.TestRunComplete += Events_TestRunComplete;
-
             _config = _configBuilder.Build();
-            var uri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
-            var project = _config.GetValue<string>(ConfigurationPath.ServerProject);
-            var password = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
 
-            //IWebProxy proxy = null;
-            //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
-            //{
+            if (_config.GetValue("Enabled", true))
+            {
+                events.TestRunStart += Events_TestRunStart;
+                events.TestResult += Events_TestResult;
+                events.TestRunComplete += Events_TestRunComplete;
 
-            //    proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
-            //    if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
-            //    {
-            //        proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
-            //            ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
-            //            : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
-            //    }
-            //}
 
-            Bridge.Service = new Service(new Uri(uri), project, password);
+                var uri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
+                var project = _config.GetValue<string>(ConfigurationPath.ServerProject);
+                var password = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
+
+                //IWebProxy proxy = null;
+                //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
+                //{
+
+                //    proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
+                //    if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
+                //    {
+                //        proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
+                //            ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
+                //            : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
+                //    }
+                //}
+
+                Bridge.Service = new Service(new Uri(uri), project, password);
+            }
         }
 
         /// <summary>
