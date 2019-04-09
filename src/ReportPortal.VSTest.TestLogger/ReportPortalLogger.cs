@@ -112,8 +112,9 @@ namespace ReportPortal.VSTest.TestLogger
         private void Events_TestResult(object sender, TestResultEventArgs e)
         {
             var fullName = e.Result.TestCase.FullyQualifiedName;
+            var testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
 
-            var fullPath = fullName.Substring(0, fullName.Length - fullName.Split('.').Last().Length - 1);
+            var fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
 
             var suiteReporter = GetOrStartSuiteNode(fullPath);
 
@@ -121,7 +122,7 @@ namespace ReportPortal.VSTest.TestLogger
             var description = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
             var startTestRequest = new StartTestItemRequest
             {
-                Name = e.Result.TestCase.DisplayName ?? e.Result.TestCase.FullyQualifiedName.Split('.').Last(),
+                Name = testName,
                 Description = description?.Value,
                 Tags = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList(),
                 StartTime = e.Result.StartTime.UtcDateTime,
