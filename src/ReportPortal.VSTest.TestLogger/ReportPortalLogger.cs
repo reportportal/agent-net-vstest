@@ -127,6 +127,16 @@ namespace ReportPortal.VSTest.TestLogger
 
             var fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
 
+            var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
+            if (rootNamespaces != null)
+            {
+                var rootNamespace = rootNamespaces.FirstOrDefault(rns => fullPath.StartsWith(rns));
+                if (rootNamespace != null)
+                {
+                    fullPath = fullPath.Substring(rootNamespace.Length + 1);
+                }
+            }
+
             var suiteReporter = GetOrStartSuiteNode(fullPath);
 
             // start test node
