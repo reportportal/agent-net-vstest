@@ -28,7 +28,7 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.tags")
                 {
-                    Properties[ConfigurationPath.LaunchTags] = parameter.Value;
+                    Properties[ConfigurationPath.LaunchTags] = parameter.Value.Replace(",", ";");
                 }
                 else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
                 {
