@@ -1,19 +1,17 @@
-﻿using ReportPortal.Shared;
-using System;
+﻿using System;
 using ReportPortal.Client.Models;
 using ReportPortal.Client.Requests;
 using ReportPortal.Client.Converters;
 using System.Runtime.Serialization;
+using ReportPortal.Shared.Extensibility;
 
 namespace ReportPortal.VSTest.TestLogger
 {
-    public class BridgeExtension : IBridgeExtension
+    public class BridgeExtension : ILogHandler
     {
-        public bool Handled { get; set; }
+        public int Order => 100;
 
-        public int Order => int.MaxValue;
-
-        public void FormatLog(ref AddLogItemRequest logRequest)
+        public bool Handle(AddLogItemRequest logRequest)
         {
             var sharedMessage = new SharedLogMessage()
             {
@@ -22,6 +20,7 @@ namespace ReportPortal.VSTest.TestLogger
                 Text = logRequest.Text,
                 Level = logRequest.Level
             };
+
             if (logRequest.Attach != null)
             {
                 sharedMessage.Attach = new SharedAttach
@@ -34,7 +33,7 @@ namespace ReportPortal.VSTest.TestLogger
 
             Console.WriteLine(ModelSerializer.Serialize<SharedLogMessage>(sharedMessage));
 
-            Handled = true;
+            return true;
         }
     }
 
