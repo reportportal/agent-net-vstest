@@ -41,6 +41,31 @@ dotnet test -l:ReportPortal
 dotnet vstest MyTests.dll --logger:ReportPortal
 ```
 
+## Visual Studio Test Explorer
+Add the `*.runsettings` file into solution with the following minimal content
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <TestAdaptersPaths>.</TestAdaptersPaths>
+  </RunConfiguration>>
+  <LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="ReportPortal">
+        <Configuration>
+          <Launch.Description>Ran from Visual Studio Test Explorer</Launch.Description>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
+</RunSettings>
+
+```
+
+In `Test Explorer` window select this file as run configuration (menu Test -> Test Settings -> Select Test Settings File).
+
+Now you can execute tests in Visual Studio and see results on the server. `Launch.Description` property in xml is provided as an exmple how to put configuration properties for logger. 
+
 # Parameters overriding
 ```cmd
 --logger:ReportPortal;Launch.Name="My new launch name"
