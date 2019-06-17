@@ -1,7 +1,7 @@
 ﻿using ReportPortal.Shared.Configuration;
 using System.Collections.Generic;
 
-namespace ReportPortal.VSTest.TestLogger
+namespace ReportPortal.VSTest.TestLogger.Configuration
 {
     class LoggerConfigurationProvider : IConfigurationProvider
     {

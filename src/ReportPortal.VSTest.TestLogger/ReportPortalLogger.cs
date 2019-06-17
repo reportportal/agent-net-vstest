@@ -13,6 +13,7 @@ using System.IO;
 using ReportPortal.Shared.Configuration;
 using ReportPortal.Shared.Reporter;
 using ReportPortal.Shared.Configuration.Providers;
+using ReportPortal.VSTest.TestLogger.Configuration;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -137,7 +138,7 @@ namespace ReportPortal.VSTest.TestLogger
                 }
             }
 
-            var suiteReporter = GetOrStartSuiteNode(fullPath);
+            var suiteReporter = GetOrStartSuiteNode(fullPath, e);
 
             // start test node
             var description = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
@@ -306,7 +307,7 @@ namespace ReportPortal.VSTest.TestLogger
             Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
         }
 
-        private ITestReporter GetOrStartSuiteNode(string fullName)
+        private ITestReporter GetOrStartSuiteNode(string fullName, TestResultEventArgs e)
         {
             if (_suitesflow.ContainsKey(fullName))
             {
@@ -328,7 +329,7 @@ namespace ReportPortal.VSTest.TestLogger
                         var startSuiteRequest = new StartTestItemRequest
                         {
                             Name = fullName,
-                            StartTime = DateTime.UtcNow,
+                            StartTime = e.Result.StartTime.UtcDateTime,
                             Type = TestItemType.Suite
                         };
 
@@ -340,13 +341,13 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else
                 {
-                    var parent = GetOrStartSuiteNode(string.Join(".", parts.Take(parts.Length - 1)));
+                    var parent = GetOrStartSuiteNode(string.Join(".", parts.Take(parts.Length - 1)), e);
 
                     // create
                     var startSuiteRequest = new StartTestItemRequest
                     {
                         Name = parts.Last(),
-                        StartTime = DateTime.UtcNow,
+                        StartTime = e.Result.StartTime.UtcDateTime,
                         Type = TestItemType.Suite
                     };
 
