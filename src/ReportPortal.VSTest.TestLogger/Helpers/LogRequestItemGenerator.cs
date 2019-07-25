@@ -85,50 +85,50 @@ namespace ReportPortal.VSTest.TestLogger.Helpers
                         });
                     }
                     var fileExtension = Path.GetExtension(filePath);
-                    var data = ReadFile(filePath, 2);
-                    if (data != null)
-                    {
-                        listOfAttachments.Add(new AddLogItemRequest
-                        {
-                            Level = LogLevel.Info,
-                            Text = Path.GetFileName(filePath),
-                            Time = timeResult,
-                            Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), data)
-                        });
-                    }
-                    else
-                    {
-                        listOfAttachments.Add(new AddLogItemRequest
-                        {
-                            Level = LogLevel.Info,
-                            Text = $"{Path.GetFileName(filePath)} in use. Attach of file wasn't completed correctly.",
-                            Time = timeResult
-                        });
-                    }
 
+                    // Sometimes (for API and unit tests definitely) logs are still under use. Just proposition to add second retry for it.
+                    var retry = 2;
+                    for (var i = 1; i <= retry; i++)
+                    {
+                        try
+                        {
+                            var data = File.ReadAllBytes(filePath);
+                            listOfAttachments.Add(new AddLogItemRequest
+                            {
+                                Level = LogLevel.Info,
+                                Text = Path.GetFileName(filePath),
+                                Time = timeResult,
+                                Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), data)
+                            });
+                            break;
+                        }
+                        catch (IOException ex)
+                        {
+                            if (i < retry)
+                            {
+                                listOfAttachments.Add(new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Warning,
+                                    Text = $"{Path.GetFileName(filePath)} file is not ready for reading. Will try again. Number of Retry: {i}. Attach of file wasn't completed correctly. \n {ex.Message}",
+                                    Time = timeResult
+                                });
+                                Thread.Sleep(500);
+                            }
+                            else
+                            {
+                                listOfAttachments.Add(new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Warning,
+                                    Text = $"{Path.GetFileName(filePath)} still in use. Attach of file wasn't completed correctly.\n{ex.Message}",
+                                    Time = timeResult
+                                });
+                            }
+                        }
+                    }
                 }
             }
 
             return listOfAttachments;
-        }
-
-        // Sometimes (for API and unit tests definitely) logs are still under use. Just proposition to add second retry for it.
-        private byte[] ReadFile(string path, int retries)
-        {
-            byte[] data = null;
-            for (var i = 1; i <= retries; i++)
-            {
-                try
-                {
-                    data = File.ReadAllBytes(path);
-                }
-                catch (IOException)
-                {
-                    Console.WriteLine($"File is not ready for reading. Will try again. Number of Retry: {i}");
-                    Thread.Sleep(500);
-                }
-            }
-            return data;
         }
     }
 }
