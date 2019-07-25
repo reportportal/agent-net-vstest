@@ -228,14 +228,26 @@ namespace ReportPortal.VSTest.TestLogger
                         if (File.Exists(filePath))
                         {
                             var fileExtension = Path.GetExtension(filePath);
-
-                            testReporter.Log(new AddLogItemRequest
+                            try
                             {
-                                Level = LogLevel.Info,
-                                Text = Path.GetFileName(filePath),
-                                Time = e.Result.EndTime.UtcDateTime,
-                                Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath))
-                            });
+                                testReporter.Log(new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Info,
+                                    Text = Path.GetFileName(filePath),
+                                    Time = e.Result.EndTime.UtcDateTime,
+                                    Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension),
+                                        File.ReadAllBytes(filePath))
+                                });
+                            }
+                            catch (IOException)
+                            {
+                                testReporter.Log(new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Info,
+                                    Text = $"{Path.GetFileName(filePath)} in use. Attach of file wasn't completed correctly.",
+                                    Time = e.Result.EndTime.UtcDateTime,
+                                });
+                            }
                         }
                         else
                         {
