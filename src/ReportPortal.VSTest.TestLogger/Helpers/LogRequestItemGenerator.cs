@@ -86,43 +86,28 @@ namespace ReportPortal.VSTest.TestLogger.Helpers
                     }
                     var fileExtension = Path.GetExtension(filePath);
 
-                    // Sometimes (for API and unit tests definitely) logs are still under use. Just proposition to add second retry for it.
-                    var retry = 2;
-                    for (var i = 1; i <= retry; i++)
+                    try
                     {
-                        try
+                        var data = File.ReadAllBytes(filePath);
+                        listOfAttachments.Add(new AddLogItemRequest
                         {
-                            var data = File.ReadAllBytes(filePath);
+                            Level = LogLevel.Info,
+                            Text = Path.GetFileName(filePath),
+                            Time = timeResult,
+                            Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension),
+                                data)
+                        });
+                    }
+                    catch (IOException ex)
+                    {
+                        {
                             listOfAttachments.Add(new AddLogItemRequest
                             {
-                                Level = LogLevel.Info,
-                                Text = Path.GetFileName(filePath),
-                                Time = timeResult,
-                                Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), data)
+                                Level = LogLevel.Warning,
+                                Text = $"{Path.GetFileName(filePath)} still in use. Attach of file wasn't completed correctly.\n" +
+                                       $"{ex.Message}",
+                                Time = timeResult
                             });
-                            break;
-                        }
-                        catch (IOException ex)
-                        {
-                            if (i < retry)
-                            {
-                                listOfAttachments.Add(new AddLogItemRequest
-                                {
-                                    Level = LogLevel.Warning,
-                                    Text = $"{Path.GetFileName(filePath)} file is not ready for reading. Will try again. Number of Retry: {i}. Attach of file wasn't completed correctly. \n {ex.Message}",
-                                    Time = timeResult
-                                });
-                                Thread.Sleep(500);
-                            }
-                            else
-                            {
-                                listOfAttachments.Add(new AddLogItemRequest
-                                {
-                                    Level = LogLevel.Warning,
-                                    Text = $"{Path.GetFileName(filePath)} still in use. Attach of file wasn't completed correctly.\n{ex.Message}",
-                                    Time = timeResult
-                                });
-                            }
                         }
                     }
                 }
