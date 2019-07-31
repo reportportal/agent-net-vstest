@@ -123,10 +123,16 @@ namespace ReportPortal.VSTest.TestLogger
 
         private void Events_TestResult(object sender, TestResultEventArgs e)
         {
-            var fullName = e.Result.TestCase.FullyQualifiedName;
-            var testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
+            var fullyQualifiedTestMethodName = e.Result.TestCase.FullyQualifiedName;
+            var testMethodName = GetTestMethodName(fullyQualifiedTestMethodName);
+            var testClassName = GetTestClassName(fullyQualifiedTestMethodName);
+            var displayName = e.Result.TestCase.DisplayName;
 
-            var fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
+            var testName = displayName == fullyQualifiedTestMethodName || displayName == null
+                ? testMethodName
+                : displayName.Replace($"{testClassName}.", string.Empty);
+
+            var fullPath = testClassName;
 
             var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
             if (rootNamespaces != null)
@@ -259,6 +265,16 @@ namespace ReportPortal.VSTest.TestLogger
             };
 
             testReporter.Finish(finishTestRequest);
+        }
+
+        private static string GetTestClassName(string fullyQualifiedName)
+        {
+            return fullyQualifiedName.Substring(0, fullyQualifiedName.LastIndexOf('.'));
+        }
+
+        private static string GetTestMethodName(string fullyQualifiedName)
+        {
+            return fullyQualifiedName.Split('.').Last();
         }
 
         private void Events_TestRunComplete(object sender, TestRunCompleteEventArgs e)
