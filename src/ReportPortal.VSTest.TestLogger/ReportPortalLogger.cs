@@ -217,6 +217,7 @@ namespace ReportPortal.VSTest.TestLogger
                 });
             }
 
+            // add attachments
             if (e.Result.Attachments != null)
             {
                 foreach (var attachmentSet in e.Result.Attachments)
@@ -225,27 +226,26 @@ namespace ReportPortal.VSTest.TestLogger
                     {
                         var filePath = attachmentData.Uri.AbsolutePath;
 
-                        if (File.Exists(filePath))
+                        var attachmentLogRequest = new AddLogItemRequest
+                        {
+                            Level = LogLevel.Info,
+                            Text = Path.GetFileName(filePath),
+                            Time = e.Result.EndTime.UtcDateTime
+                        };
+
+                        try
                         {
                             var fileExtension = Path.GetExtension(filePath);
 
-                            testReporter.Log(new AddLogItemRequest
-                            {
-                                Level = LogLevel.Info,
-                                Text = Path.GetFileName(filePath),
-                                Time = e.Result.EndTime.UtcDateTime,
-                                Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath))
-                            });
+                            attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
                         }
-                        else
+                        catch (Exception exp)
                         {
-                            testReporter.Log(new AddLogItemRequest
-                            {
-                                Level = LogLevel.Warning,
-                                Text = $"'{filePath}' file is not available.",
-                                Time = e.Result.EndTime.UtcDateTime,
-                            });
+                            attachmentLogRequest.Level = LogLevel.Warning;
+                            attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
                         }
+
+                        testReporter.Log(attachmentLogRequest);
                     }
                 }
             }
