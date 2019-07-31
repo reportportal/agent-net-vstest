@@ -14,7 +14,6 @@ using ReportPortal.Shared.Configuration;
 using ReportPortal.Shared.Reporter;
 using ReportPortal.Shared.Configuration.Providers;
 using ReportPortal.VSTest.TestLogger.Configuration;
-using ReportPortal.VSTest.TestLogger.Helpers;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -24,7 +23,6 @@ namespace ReportPortal.VSTest.TestLogger
     {
         private IConfigurationBuilder _configBuilder;
         private IConfiguration _config;
-        private LogRequestItemGenerator _logRequestItemGenerator;
 
         private readonly Dictionary<TestOutcome, Status> _statusMap = new Dictionary<TestOutcome, Status>();
 
@@ -35,7 +33,6 @@ namespace ReportPortal.VSTest.TestLogger
 
         public ReportPortalLogger()
         {
-            _logRequestItemGenerator = new LogRequestItemGenerator();
             var jsonPath = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
             _configBuilder = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables();
 
@@ -157,7 +154,101 @@ namespace ReportPortal.VSTest.TestLogger
             var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
 
             // add log messages
-            SendLogs(testReporter, e.Result);
+            if (e.Result.Messages != null)
+            {
+                foreach (var message in e.Result.Messages)
+                {
+                    if (message.Text == null) continue;
+                    foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var handled = false;
+
+                        try
+                        {
+                            var sharedMessage =
+                                Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+
+                            var logRequest = new AddLogItemRequest
+                            {
+                                Level = sharedMessage.Level,
+                                Time = sharedMessage.Time,
+                                TestItemId = sharedMessage.TestItemId,
+                                Text = sharedMessage.Text
+                            };
+                            if (sharedMessage.Attach != null)
+                            {
+                                logRequest.Attach = new Attach
+                                {
+                                    Name = sharedMessage.Attach.Name,
+                                    MimeType = sharedMessage.Attach.MimeType,
+                                    Data = sharedMessage.Attach.Data
+                                };
+                            }
+
+                            testReporter.Log(logRequest);
+
+                            handled = true;
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+
+                        if (!handled)
+                        {
+                            testReporter.Log(new AddLogItemRequest
+                            {
+                                Time = DateTime.UtcNow,
+                                Level = LogLevel.Info,
+                                Text = line
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (e.Result.ErrorMessage != null)
+            {
+                testReporter.Log(new AddLogItemRequest
+                {
+                    Time = e.Result.EndTime.UtcDateTime,
+                    Level = LogLevel.Error,
+                    Text = e.Result.ErrorMessage + "\n" + e.Result.ErrorStackTrace
+                });
+            }
+
+            // add attachments
+            if (e.Result.Attachments != null)
+            {
+                foreach (var attachmentSet in e.Result.Attachments)
+                {
+                    foreach (var attachmentData in attachmentSet.Attachments)
+                    {
+                        var filePath = attachmentData.Uri.AbsolutePath;
+
+                        var attachmentLogRequest = new AddLogItemRequest
+                        {
+                            Level = LogLevel.Info,
+                            Text = Path.GetFileName(filePath),
+                            Time = e.Result.EndTime.UtcDateTime
+                        };
+
+                        try
+                        {
+                            var fileExtension = Path.GetExtension(filePath);
+
+                            attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                        }
+                        catch (Exception exp)
+                        {
+                            attachmentLogRequest.Level = LogLevel.Warning;
+                            attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
+                        }
+
+                        testReporter.Log(attachmentLogRequest);
+                    }
+                }
+            }
 
             // finish test
 
@@ -265,38 +356,6 @@ namespace ReportPortal.VSTest.TestLogger
                     _suitesflow[fullName] = suite;
 
                     return suite;
-                }
-            }
-        }
-
-        private void SendLogs(ITestReporter testReporter, TestResult results)
-        {
-            if (results.Messages != null)
-            {
-                var messages = _logRequestItemGenerator.BuildLogItemRequest(results.Messages);
-                foreach (var message in messages)
-                {
-                    testReporter.Log(message);
-                }
-            }
-
-            if (results.ErrorMessage != null)
-            {
-                testReporter.Log(new AddLogItemRequest
-                {
-                    Time = results.EndTime.UtcDateTime,
-                    Level = LogLevel.Error,
-                    Text = $"{results.ErrorMessage }\n{results.ErrorStackTrace}"
-                });
-            }
-
-            if (results.Attachments != null)
-            {
-                var attachmentsLogItemRequests = _logRequestItemGenerator.GetAttachmentRequest(results.Attachments, results.EndTime.UtcDateTime);
-
-                foreach (var attachmentsRequest in attachmentsLogItemRequests)
-                {
-                    testReporter.Log(attachmentsRequest);
                 }
             }
         }
