@@ -123,10 +123,29 @@ namespace ReportPortal.VSTest.TestLogger
 
         private void Events_TestResult(object sender, TestResultEventArgs e)
         {
+            string fullPath;
+            string testName;
             var fullName = e.Result.TestCase.FullyQualifiedName;
-            var testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
+            if (e.Result.TestCase.ExecutorUri.Host == "xunit")
+            {
+                var testMethodName = fullName.Split('.').Last();
+                var testClassName = fullName.Substring(0, fullName.LastIndexOf('.'));
+                var displayName = e.Result.TestCase.DisplayName;
 
-            var fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
+                testName = displayName == fullName
+                    ? testMethodName
+                    : displayName.Replace($"{testClassName}.", string.Empty);
+
+                fullPath = testClassName;
+            }
+            else
+            {
+                
+                testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
+
+                fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
+            }
+            
 
             var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
             if (rootNamespaces != null)
