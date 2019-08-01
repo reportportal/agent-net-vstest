@@ -123,16 +123,29 @@ namespace ReportPortal.VSTest.TestLogger
 
         private void Events_TestResult(object sender, TestResultEventArgs e)
         {
-            var fullyQualifiedTestMethodName = e.Result.TestCase.FullyQualifiedName;
-            var testMethodName = GetTestMethodName(fullyQualifiedTestMethodName);
-            var testClassName = GetTestClassName(fullyQualifiedTestMethodName);
-            var displayName = e.Result.TestCase.DisplayName;
+            string fullPath;
+            string testName;
+            var fullName = e.Result.TestCase.FullyQualifiedName;
+            if (e.Result.TestCase.ExecutorUri.Host == "xunit")
+            {
+                var testMethodName = fullName.Split('.').Last();
+                var testClassName = fullName.Substring(0, fullName.LastIndexOf('.'));
+                var displayName = e.Result.TestCase.DisplayName;
 
-            var testName = displayName == fullyQualifiedTestMethodName || displayName == null
-                ? testMethodName
-                : displayName.Replace($"{testClassName}.", string.Empty);
+                testName = displayName == fullName
+                    ? testMethodName
+                    : displayName.Replace($"{testClassName}.", string.Empty);
 
-            var fullPath = testClassName;
+                fullPath = testClassName;
+            }
+            else
+            {
+                
+                testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
+
+                fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
+            }
+            
 
             var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
             if (rootNamespaces != null)
@@ -265,16 +278,6 @@ namespace ReportPortal.VSTest.TestLogger
             };
 
             testReporter.Finish(finishTestRequest);
-        }
-
-        private static string GetTestClassName(string fullyQualifiedName)
-        {
-            return fullyQualifiedName.Substring(0, fullyQualifiedName.LastIndexOf('.'));
-        }
-
-        private static string GetTestMethodName(string fullyQualifiedName)
-        {
-            return fullyQualifiedName.Split('.').Last();
         }
 
         private void Events_TestRunComplete(object sender, TestRunCompleteEventArgs e)
