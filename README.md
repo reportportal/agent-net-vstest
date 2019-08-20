@@ -11,7 +11,7 @@ Add new **ReportPortal.config.json** file into your project with *Copy if newer*
 Example of config file:
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/ReportPortal.VSTest.TestLogger/ReportPortal.config.schema",
+  "$schema": "https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/src/ReportPortal.VSTest.TestLogger/ReportPortal.config.schema",
   "enabled": true,
   "server": {
     "url": "https://rp.epam.com/api/v1/",
