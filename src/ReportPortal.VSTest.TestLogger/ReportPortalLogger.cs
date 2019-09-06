@@ -107,7 +107,7 @@ namespace ReportPortal.VSTest.TestLogger
             requestNewLaunch.Tags = _config.GetValues(ConfigurationPath.LaunchTags, new List<string>()).ToList();
 
             // see wether we need use external launch
-            var launchId = _config.GetValue<string>("Launch:Id", "");
+            var launchId = _config.GetValue("Launch:Id", "");
 
             if (string.IsNullOrEmpty(launchId))
             {
@@ -140,12 +140,10 @@ namespace ReportPortal.VSTest.TestLogger
             }
             else
             {
-                
                 testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
 
                 fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
             }
-            
 
             var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
             if (rootNamespaces != null)
@@ -159,13 +157,43 @@ namespace ReportPortal.VSTest.TestLogger
 
             var suiteReporter = GetOrStartSuiteNode(fullPath, e);
 
+            // find description
+            var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
+
+            if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+            {
+                var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
+                if (testProperty != null)
+                {
+                    testDescription = e.Result.TestCase.GetPropertyValue(testProperty).ToString();
+                }
+            }
+
+            // find categories
+            var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
+
+            if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+            {
+                var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
+                if (testProperty != null)
+                {
+                    testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                }
+            } else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("nunit"))
+            {
+                var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "NUnit.TestCategory");
+                if (testProperty != null)
+                {
+                    testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                }
+            }
+
             // start test node
-            var description = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description");
             var startTestRequest = new StartTestItemRequest
             {
                 Name = testName,
-                Description = description?.Value,
-                Tags = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList(),
+                Description = testDescription,
+                Tags = testCategories,
                 StartTime = e.Result.StartTime.UtcDateTime,
                 Type = TestItemType.Step
             };
