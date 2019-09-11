@@ -123,189 +123,201 @@ namespace ReportPortal.VSTest.TestLogger
 
         private void Events_TestResult(object sender, TestResultEventArgs e)
         {
-            string fullPath;
-            string testName;
-            var fullName = e.Result.TestCase.FullyQualifiedName;
-            if (e.Result.TestCase.ExecutorUri.Host == "xunit")
+            var innerResultsCountProperty = e.Result.Properties.FirstOrDefault(p => p.Id == "InnerResultsCount");
+            if (innerResultsCountProperty == null || (innerResultsCountProperty != null && (int)e.Result.GetPropertyValue(innerResultsCountProperty) == 0))
             {
-                var testMethodName = fullName.Split('.').Last();
-                var testClassName = fullName.Substring(0, fullName.LastIndexOf('.'));
-                var displayName = e.Result.TestCase.DisplayName;
-
-                testName = displayName == fullName
-                    ? testMethodName
-                    : displayName.Replace($"{testClassName}.", string.Empty);
-
-                fullPath = testClassName;
-            }
-            else
-            {
-                testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
-
-                fullPath = fullName.Substring(0, fullName.Length - testName.Length - 1);
-            }
-
-            var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
-            if (rootNamespaces != null)
-            {
-                var rootNamespace = rootNamespaces.FirstOrDefault(rns => fullPath.StartsWith(rns));
-                if (rootNamespace != null)
+                string className;
+                string testName;
+                var fullName = e.Result.TestCase.FullyQualifiedName;
+                if (e.Result.TestCase.ExecutorUri.Host == "xunit")
                 {
-                    fullPath = fullPath.Substring(rootNamespace.Length + 1);
+                    var testMethodName = fullName.Split('.').Last();
+                    var testClassName = fullName.Substring(0, fullName.LastIndexOf('.'));
+                    var displayName = e.Result.TestCase.DisplayName;
+
+                    testName = displayName == fullName
+                        ? testMethodName
+                        : displayName.Replace($"{testClassName}.", string.Empty);
+
+                    className = testClassName;
                 }
-            }
-
-            var suiteReporter = GetOrStartSuiteNode(fullPath, e);
-
-            // find description
-            var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
-
-            if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
-            {
-                var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
-                if (testProperty != null)
+                else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                 {
-                    testDescription = e.Result.TestCase.GetPropertyValue(testProperty).ToString();
+                    var classNameProperty = e.Result.TestCase.Properties.First(p => p.Id == "MSTestDiscoverer.TestClassName");
+                    className = e.Result.TestCase.GetPropertyValue(classNameProperty).ToString();
+
+                    testName = e.Result.DisplayName != null ? e.Result.DisplayName : e.Result.TestCase.DisplayName;
                 }
-            }
-
-            // find categories
-            var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
-
-            if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
-            {
-                var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
-                if (testProperty != null)
+                else
                 {
-                    testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                    testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
+
+                    className = fullName.Substring(0, fullName.Length - testName.Length - 1);
                 }
-            } else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("nunit"))
-            {
-                var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "NUnit.TestCategory");
-                if (testProperty != null)
+
+                var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
+                if (rootNamespaces != null)
                 {
-                    testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
-                }
-            }
-
-            // start test node
-            var startTestRequest = new StartTestItemRequest
-            {
-                Name = testName,
-                Description = testDescription,
-                Tags = testCategories,
-                StartTime = e.Result.StartTime.UtcDateTime,
-                Type = TestItemType.Step
-            };
-
-            var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
-
-            // add log messages
-            if (e.Result.Messages != null)
-            {
-                foreach (var message in e.Result.Messages)
-                {
-                    if (message.Text == null) continue;
-                    foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                    var rootNamespace = rootNamespaces.FirstOrDefault(rns => className.StartsWith(rns));
+                    if (rootNamespace != null)
                     {
-                        var handled = false;
+                        className = className.Substring(rootNamespace.Length + 1);
+                    }
+                }
 
-                        try
+                var suiteReporter = GetOrStartSuiteNode(className, e.Result.StartTime.UtcDateTime);
+
+                // find description
+                var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
+
+                if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                {
+                    var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
+                    if (testProperty != null)
+                    {
+                        testDescription = e.Result.TestCase.GetPropertyValue(testProperty).ToString();
+                    }
+                }
+
+                // find categories
+                var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
+
+                if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                {
+                    var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
+                    if (testProperty != null)
+                    {
+                        testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                    }
+                }
+                else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("nunit"))
+                {
+                    var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "NUnit.TestCategory");
+                    if (testProperty != null)
+                    {
+                        testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                    }
+                }
+
+                // start test node
+                var startTestRequest = new StartTestItemRequest
+                {
+                    Name = testName,
+                    Description = testDescription,
+                    Tags = testCategories,
+                    StartTime = e.Result.StartTime.UtcDateTime,
+                    Type = TestItemType.Step
+                };
+
+                var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
+
+                // add log messages
+                if (e.Result.Messages != null)
+                {
+                    foreach (var message in e.Result.Messages)
+                    {
+                        if (message.Text == null) continue;
+                        foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                         {
-                            var sharedMessage =
-                                Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+                            var handled = false;
 
-                            var logRequest = new AddLogItemRequest
+                            try
                             {
-                                Level = sharedMessage.Level,
-                                Time = sharedMessage.Time,
-                                TestItemId = sharedMessage.TestItemId,
-                                Text = sharedMessage.Text
-                            };
-                            if (sharedMessage.Attach != null)
-                            {
-                                logRequest.Attach = new Attach
+                                var sharedMessage =
+                                    Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+
+                                var logRequest = new AddLogItemRequest
                                 {
-                                    Name = sharedMessage.Attach.Name,
-                                    MimeType = sharedMessage.Attach.MimeType,
-                                    Data = sharedMessage.Attach.Data
+                                    Level = sharedMessage.Level,
+                                    Time = sharedMessage.Time,
+                                    TestItemId = sharedMessage.TestItemId,
+                                    Text = sharedMessage.Text
                                 };
+                                if (sharedMessage.Attach != null)
+                                {
+                                    logRequest.Attach = new Attach
+                                    {
+                                        Name = sharedMessage.Attach.Name,
+                                        MimeType = sharedMessage.Attach.MimeType,
+                                        Data = sharedMessage.Attach.Data
+                                    };
+                                }
+
+                                testReporter.Log(logRequest);
+
+                                handled = true;
+                            }
+                            catch (Exception)
+                            {
+
                             }
 
-                            testReporter.Log(logRequest);
-
-                            handled = true;
-                        }
-                        catch (Exception)
-                        {
-
-                        }
-
-                        if (!handled)
-                        {
-                            testReporter.Log(new AddLogItemRequest
+                            if (!handled)
                             {
-                                Time = DateTime.UtcNow,
-                                Level = LogLevel.Info,
-                                Text = line
-                            });
+                                testReporter.Log(new AddLogItemRequest
+                                {
+                                    Time = DateTime.UtcNow,
+                                    Level = LogLevel.Info,
+                                    Text = line
+                                });
+                            }
                         }
                     }
                 }
-            }
 
-            if (e.Result.ErrorMessage != null)
-            {
-                testReporter.Log(new AddLogItemRequest
+                if (e.Result.ErrorMessage != null)
                 {
-                    Time = e.Result.EndTime.UtcDateTime,
-                    Level = LogLevel.Error,
-                    Text = e.Result.ErrorMessage + "\n" + e.Result.ErrorStackTrace
-                });
-            }
-
-            // add attachments
-            if (e.Result.Attachments != null)
-            {
-                foreach (var attachmentSet in e.Result.Attachments)
-                {
-                    foreach (var attachmentData in attachmentSet.Attachments)
+                    testReporter.Log(new AddLogItemRequest
                     {
-                        var filePath = attachmentData.Uri.AbsolutePath;
+                        Time = e.Result.EndTime.UtcDateTime,
+                        Level = LogLevel.Error,
+                        Text = e.Result.ErrorMessage + "\n" + e.Result.ErrorStackTrace
+                    });
+                }
 
-                        var attachmentLogRequest = new AddLogItemRequest
+                // add attachments
+                if (e.Result.Attachments != null)
+                {
+                    foreach (var attachmentSet in e.Result.Attachments)
+                    {
+                        foreach (var attachmentData in attachmentSet.Attachments)
                         {
-                            Level = LogLevel.Info,
-                            Text = Path.GetFileName(filePath),
-                            Time = e.Result.EndTime.UtcDateTime
-                        };
+                            var filePath = attachmentData.Uri.AbsolutePath;
 
-                        try
-                        {
-                            var fileExtension = Path.GetExtension(filePath);
+                            var attachmentLogRequest = new AddLogItemRequest
+                            {
+                                Level = LogLevel.Info,
+                                Text = Path.GetFileName(filePath),
+                                Time = e.Result.EndTime.UtcDateTime
+                            };
 
-                            attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                            try
+                            {
+                                var fileExtension = Path.GetExtension(filePath);
+
+                                attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                            }
+                            catch (Exception exp)
+                            {
+                                attachmentLogRequest.Level = LogLevel.Warning;
+                                attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
+                            }
+
+                            testReporter.Log(attachmentLogRequest);
                         }
-                        catch (Exception exp)
-                        {
-                            attachmentLogRequest.Level = LogLevel.Warning;
-                            attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
-                        }
-
-                        testReporter.Log(attachmentLogRequest);
                     }
                 }
+
+                // finish test
+
+                var finishTestRequest = new FinishTestItemRequest
+                {
+                    EndTime = e.Result.EndTime.UtcDateTime,
+                    Status = _statusMap[e.Result.Outcome]
+                };
+
+                testReporter.Finish(finishTestRequest);
             }
-
-            // finish test
-
-            var finishTestRequest = new FinishTestItemRequest
-            {
-                EndTime = e.Result.EndTime.UtcDateTime,
-                Status = _statusMap[e.Result.Outcome]
-            };
-
-            testReporter.Finish(finishTestRequest);
         }
 
         private void Events_TestRunComplete(object sender, TestRunCompleteEventArgs e)
@@ -354,7 +366,7 @@ namespace ReportPortal.VSTest.TestLogger
             Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
         }
 
-        private ITestReporter GetOrStartSuiteNode(string fullName, TestResultEventArgs e)
+        private ITestReporter GetOrStartSuiteNode(string fullName, DateTime startTime)
         {
             if (_suitesflow.ContainsKey(fullName))
             {
@@ -376,7 +388,7 @@ namespace ReportPortal.VSTest.TestLogger
                         var startSuiteRequest = new StartTestItemRequest
                         {
                             Name = fullName,
-                            StartTime = e.Result.StartTime.UtcDateTime,
+                            StartTime = startTime,
                             Type = TestItemType.Suite
                         };
 
@@ -388,13 +400,13 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else
                 {
-                    var parent = GetOrStartSuiteNode(string.Join(".", parts.Take(parts.Length - 1)), e);
+                    var parent = GetOrStartSuiteNode(string.Join(".", parts.Take(parts.Length - 1)), startTime);
 
                     // create
                     var startSuiteRequest = new StartTestItemRequest
                     {
                         Name = parts.Last(),
-                        StartTime = e.Result.StartTime.UtcDateTime,
+                        StartTime = startTime,
                         Type = TestItemType.Suite
                     };
 
