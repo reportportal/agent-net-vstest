@@ -223,8 +223,17 @@ namespace ReportPortal.VSTest.TestLogger
 
                             try
                             {
-                                var sharedMessage =
-                                    Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+                                SharedLogMessage sharedMessage;
+
+                                // SpecRun adapter add this for output messages, just trim it for internal messages
+                                if (line.StartsWith("-> "))
+                                {
+                                    sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line.Substring(3));
+                                }
+                                else
+                                {
+                                    sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+                                }
 
                                 var logRequest = new AddLogItemRequest
                                 {
