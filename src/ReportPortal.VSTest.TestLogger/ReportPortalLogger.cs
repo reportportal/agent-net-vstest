@@ -143,10 +143,18 @@ namespace ReportPortal.VSTest.TestLogger
                 }
                 else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                 {
-                    var classNameProperty = e.Result.TestCase.Properties.First(p => p.Id == "MSTestDiscoverer.TestClassName");
-                    className = e.Result.TestCase.GetPropertyValue(classNameProperty).ToString();
-
                     testName = e.Result.DisplayName != null ? e.Result.DisplayName : e.Result.TestCase.DisplayName;
+
+                    var classNameProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestClassName");
+                    if (classNameProperty != null)
+                    {
+                        className = e.Result.TestCase.GetPropertyValue(classNameProperty).ToString();
+                    }
+                    // else get classname from FQN (mstestadapter/v1)
+                    else
+                    {
+                        className = fullName.Substring(0, fullName.Length - testName.Length - 1);
+                    }
                 }
                 else
                 {
