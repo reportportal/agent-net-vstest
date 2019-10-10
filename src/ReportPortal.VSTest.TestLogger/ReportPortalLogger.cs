@@ -192,7 +192,7 @@ namespace ReportPortal.VSTest.TestLogger
                     // find description
                     var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
 
-                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                     {
                         var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
                         if (testProperty != null)
@@ -204,7 +204,7 @@ namespace ReportPortal.VSTest.TestLogger
                     // find categories
                     var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
 
-                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                     {
                         var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
                         if (testProperty != null)
