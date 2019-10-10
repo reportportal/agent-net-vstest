@@ -14,6 +14,7 @@ using ReportPortal.Shared.Configuration;
 using ReportPortal.Shared.Reporter;
 using ReportPortal.Shared.Configuration.Providers;
 using ReportPortal.VSTest.TestLogger.Configuration;
+using ReportPortal.Shared.Internal.Logging;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -21,6 +22,8 @@ namespace ReportPortal.VSTest.TestLogger
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLoggerWithParameters
     {
+        private ITraceLogger TraceLogger { get; } = TraceLogManager.GetLogger(typeof(ReportPortalLogger));
+
         private IConfigurationBuilder _configBuilder;
         private IConfiguration _config;
 
@@ -171,6 +174,8 @@ namespace ReportPortal.VSTest.TestLogger
                         className = fullName.Substring(0, fullName.Length - testName.Length - 1);
                     }
 
+                    TraceLogger.Info($"ClassName: {className}, TestName: {testName}"); 
+
                     var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
                     if (rootNamespaces != null)
                     {
@@ -178,6 +183,7 @@ namespace ReportPortal.VSTest.TestLogger
                         if (rootNamespace != null)
                         {
                             className = className.Substring(rootNamespace.Length + 1);
+                            TraceLogger.Verbose($"Cutting '{rootNamespace}'... New ClassName is '{className}'.");
                         }
                     }
 
@@ -186,7 +192,7 @@ namespace ReportPortal.VSTest.TestLogger
                     // find description
                     var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
 
-                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                     {
                         var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
                         if (testProperty != null)
@@ -198,7 +204,7 @@ namespace ReportPortal.VSTest.TestLogger
                     // find categories
                     var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
 
-                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                     {
                         var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
                         if (testProperty != null)
@@ -354,10 +360,12 @@ namespace ReportPortal.VSTest.TestLogger
         {
             //TODO: apply smarter way to finish suites in real-time tests execution
             //finish suites
+
             while (_suitesflow.Count != 0)
             {
                 var deeperKey = _suitesflow.Keys.OrderBy(s => s.Split('.').Length).Last();
 
+                TraceLogger.Verbose($"Finishing namespace '{deeperKey}'");
                 var deeperSuite = _suitesflow[deeperKey];
 
                 var finishSuiteRequest = new FinishTestItemRequest
