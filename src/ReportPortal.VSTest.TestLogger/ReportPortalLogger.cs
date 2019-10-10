@@ -174,7 +174,7 @@ namespace ReportPortal.VSTest.TestLogger
                         className = fullName.Substring(0, fullName.Length - testName.Length - 1);
                     }
 
-                    TraceLogger.Info($"ClassName: {className}, TestName: {testName}");
+                    TraceLogger.Info($"ClassName: {className}, TestName: {testName}"); 
 
                     var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
                     if (rootNamespaces != null)
