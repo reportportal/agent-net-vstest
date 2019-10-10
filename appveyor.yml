@@ -4,7 +4,7 @@ install:
 
 dotnet_csproj:
   patch: true
-  version: '$(GitVersion_SemVer)'
+  version: '$(GitVersion_FullSemVer)'
 
 build_script:
   - cmd: dotnet build
