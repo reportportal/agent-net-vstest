@@ -14,6 +14,7 @@ using ReportPortal.Shared.Configuration;
 using ReportPortal.Shared.Reporter;
 using ReportPortal.Shared.Configuration.Providers;
 using ReportPortal.VSTest.TestLogger.Configuration;
+using ReportPortal.Shared.Internal.Logging;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -21,6 +22,8 @@ namespace ReportPortal.VSTest.TestLogger
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLoggerWithParameters
     {
+        private ITraceLogger TraceLogger { get; } = TraceLogManager.GetLogger(typeof(ReportPortalLogger));
+
         private IConfigurationBuilder _configBuilder;
         private IConfiguration _config;
 
@@ -354,10 +357,12 @@ namespace ReportPortal.VSTest.TestLogger
         {
             //TODO: apply smarter way to finish suites in real-time tests execution
             //finish suites
+
             while (_suitesflow.Count != 0)
             {
                 var deeperKey = _suitesflow.Keys.OrderBy(s => s.Split('.').Length).Last();
 
+                TraceLogger.Verbose($"Finishing namespace '{deeperKey}'");
                 var deeperSuite = _suitesflow[deeperKey];
 
                 var finishSuiteRequest = new FinishTestItemRequest
