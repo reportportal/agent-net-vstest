@@ -123,217 +123,230 @@ namespace ReportPortal.VSTest.TestLogger
 
         private void Events_TestResult(object sender, TestResultEventArgs e)
         {
-            var innerResultsCountProperty = e.Result.Properties.FirstOrDefault(p => p.Id == "InnerResultsCount");
-            if (innerResultsCountProperty == null || (innerResultsCountProperty != null && (int)e.Result.GetPropertyValue(innerResultsCountProperty) == 0))
+            try
             {
-                string className;
-                string testName;
-                var fullName = e.Result.TestCase.FullyQualifiedName;
-                if (e.Result.TestCase.ExecutorUri.Host == "xunit")
+                var innerResultsCountProperty = e.Result.Properties.FirstOrDefault(p => p.Id == "InnerResultsCount");
+                if (innerResultsCountProperty == null || (innerResultsCountProperty != null && (int)e.Result.GetPropertyValue(innerResultsCountProperty) == 0))
                 {
-                    var testMethodName = fullName.Split('.').Last();
-                    var testClassName = fullName.Substring(0, fullName.LastIndexOf('.'));
-                    var displayName = e.Result.TestCase.DisplayName;
-
-                    testName = displayName == fullName
-                        ? testMethodName
-                        : displayName.Replace($"{testClassName}.", string.Empty);
-
-                    className = testClassName;
-                }
-                else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
-                {
-                    testName = e.Result.DisplayName != null ? e.Result.DisplayName : e.Result.TestCase.DisplayName;
-
-                    var classNameProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestClassName");
-                    if (classNameProperty != null)
+                    string className;
+                    string testName;
+                    var fullName = e.Result.TestCase.FullyQualifiedName;
+                    if (e.Result.TestCase.ExecutorUri.Host == "xunit")
                     {
-                        className = e.Result.TestCase.GetPropertyValue(classNameProperty).ToString();
+                        var testMethodName = fullName.Split('.').Last();
+                        var testClassName = fullName.Substring(0, fullName.LastIndexOf('.'));
+                        var displayName = e.Result.TestCase.DisplayName;
+
+                        testName = displayName == fullName
+                            ? testMethodName
+                            : displayName.Replace($"{testClassName}.", string.Empty);
+
+                        className = testClassName;
                     }
-                    // else get classname from FQN (mstestadapter/v1)
+                    else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
+                    {
+                        testName = e.Result.DisplayName ?? e.Result.TestCase.DisplayName;
+
+                        var classNameProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestClassName");
+                        if (classNameProperty != null)
+                        {
+                            className = e.Result.TestCase.GetPropertyValue(classNameProperty).ToString();
+                        }
+                        // else get classname from FQN (mstestadapter/v1)
+                        else
+                        {
+                            // and temporary consider testname from TestCase object instead of from Result object
+                            // Result.DisplayName: Test1 (Data Row 0)
+                            // TestCase.DisplayName Test1
+                            // the first name is better in report, but consider the second name to identify 'className'
+                            testName = e.Result.TestCase.DisplayName ?? e.Result.DisplayName;
+                            className = fullName.Substring(0, fullName.Length - testName.Length - 1);
+                            testName = e.Result.DisplayName ?? e.Result.TestCase.DisplayName;
+                        }
+                    }
                     else
                     {
+                        testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
+
                         className = fullName.Substring(0, fullName.Length - testName.Length - 1);
                     }
-                }
-                else
-                {
-                    testName = e.Result.TestCase.DisplayName ?? fullName.Split('.').Last();
 
-                    className = fullName.Substring(0, fullName.Length - testName.Length - 1);
-                }
-
-                var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
-                if (rootNamespaces != null)
-                {
-                    var rootNamespace = rootNamespaces.FirstOrDefault(rns => className.StartsWith(rns));
-                    if (rootNamespace != null)
+                    var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
+                    if (rootNamespaces != null)
                     {
-                        className = className.Substring(rootNamespace.Length + 1);
-                    }
-                }
-
-                var suiteReporter = GetOrStartSuiteNode(className, e.Result.StartTime.UtcDateTime);
-
-                // find description
-                var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
-
-                if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
-                {
-                    var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
-                    if (testProperty != null)
-                    {
-                        testDescription = e.Result.TestCase.GetPropertyValue(testProperty).ToString();
-                    }
-                }
-
-                // find categories
-                var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
-
-                if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
-                {
-                    var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
-                    if (testProperty != null)
-                    {
-                        testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
-                    }
-                }
-                else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("nunit"))
-                {
-                    var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "NUnit.TestCategory");
-                    if (testProperty != null)
-                    {
-                        testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
-                    }
-                }
-
-                // start test node
-                var startTestRequest = new StartTestItemRequest
-                {
-                    Name = testName,
-                    Description = testDescription,
-                    Tags = testCategories,
-                    StartTime = e.Result.StartTime.UtcDateTime,
-                    Type = TestItemType.Step
-                };
-
-                var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
-
-                // add log messages
-                if (e.Result.Messages != null)
-                {
-                    foreach (var message in e.Result.Messages)
-                    {
-                        if (message.Text == null) continue;
-                        foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                        var rootNamespace = rootNamespaces.FirstOrDefault(rns => className.StartsWith(rns));
+                        if (rootNamespace != null)
                         {
-                            var handled = false;
+                            className = className.Substring(rootNamespace.Length + 1);
+                        }
+                    }
 
-                            try
+                    var suiteReporter = GetOrStartSuiteNode(className, e.Result.StartTime.UtcDateTime);
+
+                    // find description
+                    var testDescription = e.Result.TestCase.Traits.FirstOrDefault(x => x.Name == "Description")?.Value;
+
+                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                    {
+                        var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "Description");
+                        if (testProperty != null)
+                        {
+                            testDescription = e.Result.TestCase.GetPropertyValue(testProperty).ToString();
+                        }
+                    }
+
+                    // find categories
+                    var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
+
+                    if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstestadapter"))
+                    {
+                        var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
+                        if (testProperty != null)
+                        {
+                            testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                        }
+                    }
+                    else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("nunit"))
+                    {
+                        var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "NUnit.TestCategory");
+                        if (testProperty != null)
+                        {
+                            testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
+                        }
+                    }
+
+                    // start test node
+                    var startTestRequest = new StartTestItemRequest
+                    {
+                        Name = testName,
+                        Description = testDescription,
+                        Tags = testCategories,
+                        StartTime = e.Result.StartTime.UtcDateTime,
+                        Type = TestItemType.Step
+                    };
+
+                    var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
+
+                    // add log messages
+                    if (e.Result.Messages != null)
+                    {
+                        foreach (var message in e.Result.Messages)
+                        {
+                            if (message.Text == null) continue;
+                            foreach (var line in message.Text.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                             {
-                                SharedLogMessage sharedMessage;
+                                var handled = false;
 
-                                // SpecRun adapter add this for output messages, just trim it for internal messages
-                                if (line.StartsWith("-> "))
+                                try
                                 {
-                                    sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line.Substring(3));
-                                }
-                                else
-                                {
-                                    sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
-                                }
+                                    SharedLogMessage sharedMessage;
 
-                                var logRequest = new AddLogItemRequest
-                                {
-                                    Level = sharedMessage.Level,
-                                    Time = sharedMessage.Time,
-                                    TestItemId = sharedMessage.TestItemId,
-                                    Text = sharedMessage.Text
-                                };
-                                if (sharedMessage.Attach != null)
-                                {
-                                    logRequest.Attach = new Attach
+                                    // SpecRun adapter add this for output messages, just trim it for internal messages
+                                    if (line.StartsWith("-> "))
                                     {
-                                        Name = sharedMessage.Attach.Name,
-                                        MimeType = sharedMessage.Attach.MimeType,
-                                        Data = sharedMessage.Attach.Data
+                                        sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line.Substring(3));
+                                    }
+                                    else
+                                    {
+                                        sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+                                    }
+
+                                    var logRequest = new AddLogItemRequest
+                                    {
+                                        Level = sharedMessage.Level,
+                                        Time = sharedMessage.Time,
+                                        TestItemId = sharedMessage.TestItemId,
+                                        Text = sharedMessage.Text
                                     };
+                                    if (sharedMessage.Attach != null)
+                                    {
+                                        logRequest.Attach = new Attach
+                                        {
+                                            Name = sharedMessage.Attach.Name,
+                                            MimeType = sharedMessage.Attach.MimeType,
+                                            Data = sharedMessage.Attach.Data
+                                        };
+                                    }
+
+                                    testReporter.Log(logRequest);
+
+                                    handled = true;
+                                }
+                                catch (Exception)
+                                {
+
                                 }
 
-                                testReporter.Log(logRequest);
-
-                                handled = true;
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-
-                            if (!handled)
-                            {
-                                testReporter.Log(new AddLogItemRequest
+                                if (!handled)
                                 {
-                                    Time = DateTime.UtcNow,
-                                    Level = LogLevel.Info,
-                                    Text = line
-                                });
+                                    testReporter.Log(new AddLogItemRequest
+                                    {
+                                        Time = DateTime.UtcNow,
+                                        Level = LogLevel.Info,
+                                        Text = line
+                                    });
+                                }
                             }
                         }
                     }
-                }
 
-                if (e.Result.ErrorMessage != null)
-                {
-                    testReporter.Log(new AddLogItemRequest
+                    if (e.Result.ErrorMessage != null)
                     {
-                        Time = e.Result.EndTime.UtcDateTime,
-                        Level = LogLevel.Error,
-                        Text = e.Result.ErrorMessage + "\n" + e.Result.ErrorStackTrace
-                    });
-                }
-
-                // add attachments
-                if (e.Result.Attachments != null)
-                {
-                    foreach (var attachmentSet in e.Result.Attachments)
-                    {
-                        foreach (var attachmentData in attachmentSet.Attachments)
+                        testReporter.Log(new AddLogItemRequest
                         {
-                            var filePath = attachmentData.Uri.AbsolutePath;
+                            Time = e.Result.EndTime.UtcDateTime,
+                            Level = LogLevel.Error,
+                            Text = e.Result.ErrorMessage + "\n" + e.Result.ErrorStackTrace
+                        });
+                    }
 
-                            var attachmentLogRequest = new AddLogItemRequest
+                    // add attachments
+                    if (e.Result.Attachments != null)
+                    {
+                        foreach (var attachmentSet in e.Result.Attachments)
+                        {
+                            foreach (var attachmentData in attachmentSet.Attachments)
                             {
-                                Level = LogLevel.Info,
-                                Text = Path.GetFileName(filePath),
-                                Time = e.Result.EndTime.UtcDateTime
-                            };
+                                var filePath = attachmentData.Uri.AbsolutePath;
 
-                            try
-                            {
-                                var fileExtension = Path.GetExtension(filePath);
+                                var attachmentLogRequest = new AddLogItemRequest
+                                {
+                                    Level = LogLevel.Info,
+                                    Text = Path.GetFileName(filePath),
+                                    Time = e.Result.EndTime.UtcDateTime
+                                };
 
-                                attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                                try
+                                {
+                                    var fileExtension = Path.GetExtension(filePath);
+
+                                    attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                                }
+                                catch (Exception exp)
+                                {
+                                    attachmentLogRequest.Level = LogLevel.Warning;
+                                    attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
+                                }
+
+                                testReporter.Log(attachmentLogRequest);
                             }
-                            catch (Exception exp)
-                            {
-                                attachmentLogRequest.Level = LogLevel.Warning;
-                                attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
-                            }
-
-                            testReporter.Log(attachmentLogRequest);
                         }
                     }
+
+                    // finish test
+
+                    var finishTestRequest = new FinishTestItemRequest
+                    {
+                        EndTime = e.Result.EndTime.UtcDateTime,
+                        Status = _statusMap[e.Result.Outcome]
+                    };
+
+                    testReporter.Finish(finishTestRequest);
                 }
-
-                // finish test
-
-                var finishTestRequest = new FinishTestItemRequest
-                {
-                    EndTime = e.Result.EndTime.UtcDateTime,
-                    Status = _statusMap[e.Result.Outcome]
-                };
-
-                testReporter.Finish(finishTestRequest);
+            }
+            catch(Exception exp)
+            {
+                Console.WriteLine($"ReportPortal unexpected exception in parsing test result: {exp}");
             }
         }
 
