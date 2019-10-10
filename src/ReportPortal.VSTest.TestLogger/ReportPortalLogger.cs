@@ -174,6 +174,8 @@ namespace ReportPortal.VSTest.TestLogger
                         className = fullName.Substring(0, fullName.Length - testName.Length - 1);
                     }
 
+                    TraceLogger.Info($"ClassName: {className}, TestName: {testName}");
+
                     var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
                     if (rootNamespaces != null)
                     {
@@ -181,6 +183,7 @@ namespace ReportPortal.VSTest.TestLogger
                         if (rootNamespace != null)
                         {
                             className = className.Substring(rootNamespace.Length + 1);
+                            TraceLogger.Verbose($"Cutting '{rootNamespace}'... New ClassName is '{className}'.");
                         }
                     }
 
