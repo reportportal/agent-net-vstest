@@ -392,7 +392,7 @@ namespace ReportPortal.VSTest.TestLogger
 
             try
             {
-                _launchReporter.FinishTask.Wait(TimeSpan.FromMinutes(30));
+                _launchReporter.Sync();
             }
             catch (Exception exp)
             {
