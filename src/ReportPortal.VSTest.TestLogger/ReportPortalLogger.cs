@@ -174,7 +174,7 @@ namespace ReportPortal.VSTest.TestLogger
                         className = fullName.Substring(0, fullName.Length - testName.Length - 1);
                     }
 
-                    TraceLogger.Info($"ClassName: {className}, TestName: {testName}"); 
+                    TraceLogger.Info($"ClassName: {className}, TestName: {testName}");
 
                     var rootNamespaces = _config.GetValues<string>("rootNamespaces", null);
                     if (rootNamespaces != null)
@@ -315,26 +315,25 @@ namespace ReportPortal.VSTest.TestLogger
                             {
                                 var filePath = attachmentData.Uri.AbsolutePath;
 
-                                var attachmentLogRequest = new AddLogItemRequest
-                                {
-                                    Level = LogLevel.Info,
-                                    Text = Path.GetFileName(filePath),
-                                    Time = e.Result.EndTime.UtcDateTime
-                                };
-
                                 try
                                 {
+                                    var attachmentLogRequest = new AddLogItemRequest
+                                    {
+                                        Level = LogLevel.Info,
+                                        Text = Path.GetFileName(filePath),
+                                        Time = e.Result.EndTime.UtcDateTime
+                                    };
+
                                     var fileExtension = Path.GetExtension(filePath);
 
                                     attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+
+                                    testReporter.Log(attachmentLogRequest);
                                 }
                                 catch (Exception exp)
                                 {
-                                    attachmentLogRequest.Level = LogLevel.Warning;
-                                    attachmentLogRequest.Text = $"Cannot read a content of '{filePath}' file: {exp.Message}";
+                                    TraceLogger.Error($"Cannot read a content of '{filePath}' file: {exp.Message}");
                                 }
-
-                                testReporter.Log(attachmentLogRequest);
                             }
                         }
                     }
@@ -350,7 +349,7 @@ namespace ReportPortal.VSTest.TestLogger
                     testReporter.Finish(finishTestRequest);
                 }
             }
-            catch(Exception exp)
+            catch (Exception exp)
             {
                 Console.WriteLine($"ReportPortal unexpected exception in parsing test result: {exp}");
             }
