@@ -313,7 +313,7 @@ namespace ReportPortal.VSTest.TestLogger
                         {
                             foreach (var attachmentData in attachmentSet.Attachments)
                             {
-                                var filePath = attachmentData.Uri.AbsolutePath;
+                                var filePath = attachmentData.Uri.LocalPath;
 
                                 try
                                 {
