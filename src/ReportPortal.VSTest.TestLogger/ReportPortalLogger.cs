@@ -109,17 +109,7 @@ namespace ReportPortal.VSTest.TestLogger
 
             requestNewLaunch.Tags = _config.GetValues(ConfigurationPath.LaunchTags, new List<string>()).ToList();
 
-            // see wether we need use external launch
-            var launchId = _config.GetValue("Launch:Id", "");
-
-            if (string.IsNullOrEmpty(launchId))
-            {
-                _launchReporter = new LaunchReporter(Bridge.Service);
-            }
-            else
-            {
-                _launchReporter = new LaunchReporter(Bridge.Service, launchId);
-            }
+            _launchReporter = new LaunchReporter(Bridge.Service, _config, null);
 
             _launchReporter.Start(requestNewLaunch);
         }
