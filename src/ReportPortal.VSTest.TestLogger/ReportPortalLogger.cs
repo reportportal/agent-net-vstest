@@ -3,10 +3,8 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System.Collections.Generic;
-using ReportPortal.Client.Models;
 using ReportPortal.Client;
 using ReportPortal.Shared;
-using ReportPortal.Client.Requests;
 using System.Diagnostics;
 using System.Linq;
 using System.IO;
@@ -15,6 +13,8 @@ using ReportPortal.Shared.Reporter;
 using ReportPortal.Shared.Configuration.Providers;
 using ReportPortal.VSTest.TestLogger.Configuration;
 using ReportPortal.Shared.Internal.Logging;
+using ReportPortal.Client.Abstractions.Responses;
+using ReportPortal.Client.Abstractions.Requests;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -247,11 +247,11 @@ namespace ReportPortal.VSTest.TestLogger
                                         sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
                                     }
 
-                                    var logRequest = new AddLogItemRequest
+                                    var logRequest = new CreateLogItemRequest
                                     {
                                         Level = sharedMessage.Level,
                                         Time = sharedMessage.Time,
-                                        TestItemId = sharedMessage.TestItemId,
+                                        TestItemUuid = sharedMessage.TestItemUuid,
                                         Text = sharedMessage.Text
                                     };
                                     if (sharedMessage.Attach != null)
@@ -275,7 +275,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                                 if (!handled)
                                 {
-                                    testReporter.Log(new AddLogItemRequest
+                                    testReporter.Log(new CreateLogItemRequest
                                     {
                                         Time = DateTime.UtcNow,
                                         Level = LogLevel.Info,
@@ -288,7 +288,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                     if (e.Result.ErrorMessage != null)
                     {
-                        testReporter.Log(new AddLogItemRequest
+                        testReporter.Log(new CreateLogItemRequest
                         {
                             Time = e.Result.EndTime.UtcDateTime,
                             Level = LogLevel.Error,
@@ -307,7 +307,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                                 try
                                 {
-                                    var attachmentLogRequest = new AddLogItemRequest
+                                    var attachmentLogRequest = new CreateLogItemRequest
                                     {
                                         Level = LogLevel.Info,
                                         Text = Path.GetFileName(filePath),

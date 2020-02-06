@@ -1,9 +1,9 @@
 ﻿using System;
-using ReportPortal.Client.Models;
-using ReportPortal.Client.Requests;
 using ReportPortal.Client.Converters;
 using System.Runtime.Serialization;
 using ReportPortal.Shared.Extensibility;
+using ReportPortal.Client.Abstractions.Requests;
+using ReportPortal.Client.Abstractions.Responses;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -11,11 +11,11 @@ namespace ReportPortal.VSTest.TestLogger
     {
         public int Order => 100;
 
-        public bool Handle(AddLogItemRequest logRequest)
+        public bool Handle(CreateLogItemRequest logRequest)
         {
             var sharedMessage = new SharedLogMessage()
             {
-                TestItemId = logRequest.TestItemId,
+                TestItemUuid = logRequest.TestItemUuid,
                 Time = logRequest.Time,
                 Text = logRequest.Text,
                 Level = logRequest.Level
@@ -44,7 +44,7 @@ namespace ReportPortal.VSTest.TestLogger
         /// ID of test item to add new logs.
         /// </summary>
         [DataMember]
-        public string TestItemId { get; set; }
+        public string TestItemUuid { get; set; }
 
         /// <summary>
         /// Date time of log item.
