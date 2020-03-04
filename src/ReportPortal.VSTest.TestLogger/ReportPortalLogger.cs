@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System.Collections.Generic;
 using ReportPortal.Client;
-using ReportPortal.Shared;
 using System.Diagnostics;
 using System.Linq;
 using System.IO;
@@ -36,7 +35,13 @@ namespace ReportPortal.VSTest.TestLogger
 
         public ReportPortalLogger()
         {
-            var jsonPath = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath) + "/ReportPortal.config.json";
+            var testLoggerDirectory = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath);
+            TraceLogger.Verbose($"This test logger base directory: {testLoggerDirectory}");
+
+            // Seems Visual Studio Test Host  for net core uses built-in vstestconsole for netcoreapp1.0
+            System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12;
+
+            var jsonPath = Path.Combine(testLoggerDirectory, "ReportPortal.config.json");
             _configBuilder = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables();
 
             _statusMap[TestOutcome.Passed] = Status.Passed;
@@ -52,33 +57,36 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="testRunDirectory">Test Run Directory</param>
         public void Initialize(TestLoggerEvents events, string testRunDirectory)
         {
-            _config = _configBuilder.Build();
-
-            if (_config.GetValue("Enabled", true))
+            try
             {
-                events.TestRunStart += Events_TestRunStart;
-                events.TestResult += Events_TestResult;
-                events.TestRunComplete += Events_TestRunComplete;
+                _config = _configBuilder.Build();
 
+                if (_config.GetValue("Enabled", true))
+                {
+                    events.TestRunStart += Events_TestRunStart;
+                    events.TestResult += Events_TestResult;
+                    events.TestRunComplete += Events_TestRunComplete;
 
-                var uri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
-                var project = _config.GetValue<string>(ConfigurationPath.ServerProject);
-                var password = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
+                    //IWebProxy proxy = null;
+                    //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
+                    //{
 
-                //IWebProxy proxy = null;
-                //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
-                //{
-
-                //    proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
-                //    if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
-                //    {
-                //        proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
-                //            ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
-                //            : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
-                //    }
-                //}
-
-                Bridge.Service = new Service(new Uri(uri), project, password);
+                    //    proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
+                    //    if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
+                    //    {
+                    //        proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
+                    //            ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
+                    //            : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
+                    //    }
+                    //}
+                }
+            }
+            catch (Exception exp)
+            {
+                var error = $"Unexpected exception in {nameof(Initialize)}: {exp}";
+                TraceLogger.Error(error);
+                Console.WriteLine(error);
+                throw;
             }
         }
 
@@ -89,29 +97,54 @@ namespace ReportPortal.VSTest.TestLogger
         /// <param name="parameters">Configuration parameters for logger.</param>
         public void Initialize(TestLoggerEvents events, Dictionary<string, string> parameters)
         {
-            _configBuilder.Add(new LoggerConfigurationProvider(parameters));
+            try
+            {
+                _configBuilder.Add(new LoggerConfigurationProvider(parameters));
 
-            Initialize(events, parameters.Single(p => p.Key == "TestRunDirectory").Value);
+                Initialize(events, parameters.Single(p => p.Key == "TestRunDirectory").Value);
+            }
+            catch (Exception exp)
+            {
+                var error = $"Unexpected exception in {nameof(Initialize)}: {exp}";
+                TraceLogger.Error(error);
+                Console.WriteLine(error);
+                throw;
+            }
         }
 
         private void Events_TestRunStart(object sender, TestRunStartEventArgs e)
         {
-            var requestNewLaunch = new StartLaunchRequest
+            try
             {
-                Name = _config.GetValue(ConfigurationPath.LaunchName, "VsTest Launch"),
-                Description = _config.GetValue(ConfigurationPath.LaunchDescription, ""),
-                StartTime = DateTime.UtcNow
-            };
-            if (_config.GetValue(ConfigurationPath.LaunchDebugMode, false))
-            {
-                requestNewLaunch.Mode = LaunchMode.Debug;
+                var apiUri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
+                var apiProject = _config.GetValue<string>(ConfigurationPath.ServerProject);
+                var apiToken = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
+                var apiService = new Service(new Uri(apiUri), apiProject, apiToken);
+
+                var requestNewLaunch = new StartLaunchRequest
+                {
+                    Name = _config.GetValue(ConfigurationPath.LaunchName, "VsTest Launch"),
+                    Description = _config.GetValue(ConfigurationPath.LaunchDescription, ""),
+                    StartTime = DateTime.UtcNow
+                };
+                if (_config.GetValue(ConfigurationPath.LaunchDebugMode, false))
+                {
+                    requestNewLaunch.Mode = LaunchMode.Debug;
+                }
+
+                requestNewLaunch.Tags = _config.GetValues(ConfigurationPath.LaunchTags, new List<string>()).ToList();
+
+                _launchReporter = new LaunchReporter(apiService, _config, null);
+
+                _launchReporter.Start(requestNewLaunch);
             }
-
-            requestNewLaunch.Tags = _config.GetValues(ConfigurationPath.LaunchTags, new List<string>()).ToList();
-
-            _launchReporter = new LaunchReporter(Bridge.Service, _config, null);
-
-            _launchReporter.Start(requestNewLaunch);
+            catch (Exception exp)
+            {
+                var error = $"Unexpected exception in {nameof(Events_TestRunStart)}: {exp}";
+                TraceLogger.Error(error);
+                Console.WriteLine(error);
+                throw;
+            }
         }
 
         private void Events_TestResult(object sender, TestResultEventArgs e)
@@ -341,56 +374,67 @@ namespace ReportPortal.VSTest.TestLogger
             }
             catch (Exception exp)
             {
-                Console.WriteLine($"ReportPortal unexpected exception in parsing test result: {exp}");
+                var error = $"Unexpected exception in {nameof(Events_TestResult)}: {exp}";
+                TraceLogger.Error(error);
+                Console.WriteLine(error);
             }
         }
 
         private void Events_TestRunComplete(object sender, TestRunCompleteEventArgs e)
         {
-            //TODO: apply smarter way to finish suites in real-time tests execution
-            //finish suites
-
-            while (_suitesflow.Count != 0)
-            {
-                var deeperKey = _suitesflow.Keys.OrderBy(s => s.Split('.').Length).Last();
-
-                TraceLogger.Verbose($"Finishing namespace '{deeperKey}'");
-                var deeperSuite = _suitesflow[deeperKey];
-
-                var finishSuiteRequest = new FinishTestItemRequest
-                {
-                    EndTime = DateTime.UtcNow,
-                    //TODO: identify correct suite status based on inner nodes
-                    Status = Status.Passed
-                };
-
-                deeperSuite.Finish(finishSuiteRequest);
-                _suitesflow.Remove(deeperKey);
-            }
-
-            // finish launch
-            var requestFinishLaunch = new FinishLaunchRequest
-            {
-                EndTime = DateTime.UtcNow
-            };
-
-            _launchReporter.Finish(requestFinishLaunch);
-
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            Console.Write("Finishing to send results to Report Portal...");
-
             try
             {
-                _launchReporter.Sync();
+                //TODO: apply smarter way to finish suites in real-time tests execution
+                //finish suites
+
+                while (_suitesflow.Count != 0)
+                {
+                    var deeperKey = _suitesflow.Keys.OrderBy(s => s.Split('.').Length).Last();
+
+                    TraceLogger.Verbose($"Finishing namespace '{deeperKey}'");
+                    var deeperSuite = _suitesflow[deeperKey];
+
+                    var finishSuiteRequest = new FinishTestItemRequest
+                    {
+                        EndTime = DateTime.UtcNow,
+                        //TODO: identify correct suite status based on inner nodes
+                        Status = Status.Passed
+                    };
+
+                    deeperSuite.Finish(finishSuiteRequest);
+                    _suitesflow.Remove(deeperKey);
+                }
+
+                // finish launch
+                var requestFinishLaunch = new FinishLaunchRequest
+                {
+                    EndTime = DateTime.UtcNow
+                };
+
+                _launchReporter.Finish(requestFinishLaunch);
+
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                Console.Write("Finishing to send results to Report Portal...");
+
+                try
+                {
+                    _launchReporter.Sync();
+                }
+                catch (Exception exp)
+                {
+                    Console.WriteLine(exp);
+                    throw;
+                }
+
+                stopwatch.Stop();
+                Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
             }
             catch (Exception exp)
             {
-                Console.WriteLine(exp);
-                throw;
+                var error = $"Unexpected exception in {nameof(Events_TestRunComplete)}: {exp}";
+                TraceLogger.Error(error);
+                Console.WriteLine(error);
             }
-
-            stopwatch.Stop();
-            Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
         }
 
         private ITestReporter GetOrStartSuiteNode(string fullName, DateTime startTime)
