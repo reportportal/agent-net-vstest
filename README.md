@@ -48,7 +48,7 @@ Add the `*.runsettings` file into solution with the following minimal content
 <RunSettings>
   <RunConfiguration>
     <TestAdaptersPaths>.</TestAdaptersPaths>
-  </RunConfiguration>>
+  </RunConfiguration>
   <LoggerRunSettings>
     <Loggers>
       <Logger friendlyName="ReportPortal">
