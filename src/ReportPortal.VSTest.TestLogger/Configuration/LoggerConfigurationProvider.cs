@@ -18,30 +18,11 @@ namespace ReportPortal.VSTest.TestLogger.Configuration
         {
             foreach (var parameter in _parameters)
             {
-                if (parameter.Key.ToLowerInvariant() == "launch.name")
-                {
-                    Properties[ConfigurationPath.LaunchName] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.description")
-                {
-                    Properties[ConfigurationPath.LaunchDescription] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.tags")
-                {
-                    Properties[ConfigurationPath.LaunchTags] = parameter.Value.Replace(",", ";");
-                }
-                else if (parameter.Key.ToLowerInvariant() == "launch.isdebugmode")
-                {
-                    Properties[ConfigurationPath.LaunchDebugMode] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "server.project")
-                {
-                    Properties[ConfigurationPath.ServerProject] = parameter.Value;
-                }
-                else if (parameter.Key.ToLowerInvariant() == "server.authentication.uuid")
-                {
-                    Properties[ConfigurationPath.ServerAuthenticationUuid] = parameter.Value;
-                }
+                var key = parameter.Key.ToLowerInvariant().Replace(".", ConfigurationPath.KeyDelimeter);
+                var value = parameter.Value;
+                if (key == ConfigurationPath.LaunchTags.ToLowerInvariant())
+                    value = parameter.Value.Replace(",", ";");
+                Properties[key] = value;
             }
 
             return Properties;
