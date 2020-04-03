@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+
+    <_ReportPortal_VsTestLogger_Runtime_Path>$(MSBuildThisFileDirectory)..\..\lib\netstandard2.0\ReportPortal.VSTest.TestLogger.dll</_ReportPortal_VsTestLogger_Runtime_Path>
+    <_ReportPortal_VsTestLogger_Runtime_Pdb_Path>$(MSBuildThisFileDirectory)..\..\lib\netstandard2.0\ReportPortal.VSTest.TestLogger.pdb</_ReportPortal_VsTestLogger_Runtime_Pdb_Path>
+
+  </PropertyGroup>
+
+</Project>
