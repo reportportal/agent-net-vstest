@@ -24,7 +24,7 @@ Example of config file:
     "name": "VS Test Demo Launch",
     "description": "this is description",
     "debugMode": true,
-    "tags": [ "t1", "t2" ]
+    "attributes": [ "t1", "os:win10" ]
   }
 }
 ```
@@ -71,15 +71,6 @@ Now you can execute tests in Visual Studio and see results on the server. `Launc
 --logger:ReportPortal;Launch.Name="My new launch name"
 ```
 
-## Supported parameters
-- `Launch.Name`
-- `Launch.Description`
-- `Launch.Tags` - comma-separated list
-- `Launch.DebugMode` - true/false
-
-- `Server.Project`
-- `Server.Authentication.Uuid`
-
 # Environment variables
 It's possible to override parameters via environment variables.
 ```cmd
@@ -87,7 +78,7 @@ set reportportal_launch_name="My new launch name"
 # execute tests
 ```
 
-`reportportal_` prefix is used for naming variables, and `_` is used as delimeter. For example to override `Server.Authentication.Uuid` parameter, we need specify `ReportPortal_Server_Authentication_Uuid` in environment variables. To override launch tags we need specify `ReportPortal_Launch_Tags` with `tag1;tag2` value (`;` used as separator for list of values).
+`reportportal_` prefix is used for naming variables, and `_` is used as delimeter. For example to override `Server.Authentication.Uuid` parameter, we need specify `ReportPortal_Server_Authentication_Uuid` in environment variables. To override launch tags we need specify `ReportPortal_Launch_Attributes` with `tag1;os:win7` value (`;` used as separator for list of values).
 
 # Integrate logger framework
 - [NLog](https://github.com/reportportal/logger-net-nlog)
