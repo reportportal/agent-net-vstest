@@ -8,7 +8,7 @@
     <Description>VsTest extension for reporting test results into http://reportportal.io</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>http://reportportal.io</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/Logo.png</PackageIconUrl>
+    <PackageIcon>Logo.png</PackageIcon>
     
     <RepositoryType>GitHub</RepositoryType>
     <RepositoryUrl>https://github.com/reportportal/agent-net-vstest</RepositoryUrl>
@@ -30,6 +30,8 @@
   <ItemGroup>
     <None Include="Build\**\*.props" Pack="true" PackagePath="build\" />
     <None Include="Build\**\*.targets" Pack="true" PackagePath="build\" />
+
+    <None Include="..\..\Logo.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
 </Project>
