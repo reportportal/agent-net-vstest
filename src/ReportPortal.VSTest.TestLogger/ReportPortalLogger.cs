@@ -14,6 +14,7 @@ using ReportPortal.Shared.Internal.Logging;
 using ReportPortal.Client.Abstractions.Responses;
 using ReportPortal.Client.Abstractions.Requests;
 using ReportPortal.Client.Abstractions.Models;
+using ReportPortal.VSTest.TestLogger.LogHandler.Messages;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -269,40 +270,33 @@ namespace ReportPortal.VSTest.TestLogger
                             {
                                 var handled = false;
 
+                                var textMessage = line;
+
                                 try
                                 {
-                                    SharedLogMessage sharedMessage;
-
-                                    // SpecRun adapter add this for output messages, just trim it for internal messages
+                                    // SpecRun adapter adds this for output messages, just trim it for internal text messages
                                     if (line.StartsWith("-> "))
                                     {
-                                        sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line.Substring(3));
-                                    }
-                                    else
-                                    {
-                                        sharedMessage = Client.Converters.ModelSerializer.Deserialize<SharedLogMessage>(line);
+                                        textMessage = line.Substring(3);
                                     }
 
-                                    var logRequest = new CreateLogItemRequest
+                                    var baseCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<BaseCommunicationMessage>(textMessage);
+
+                                    switch (baseCommunicationMessage.Action)
                                     {
-                                        Level = sharedMessage.Level,
-                                        Time = sharedMessage.Time,
-                                        TestItemUuid = sharedMessage.TestItemUuid,
-                                        Text = sharedMessage.Text
-                                    };
-                                    if (sharedMessage.Attach != null)
-                                    {
-                                        logRequest.Attach = new Attach
-                                        {
-                                            Name = sharedMessage.Attach.Name,
-                                            MimeType = sharedMessage.Attach.MimeType,
-                                            Data = sharedMessage.Attach.Data
-                                        };
+                                        case CommunicationAction.AddLog:
+                                            var addLogCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<AddLogCommunicationMessage>(textMessage);
+                                            handled = HandleAddLogCommunicationAction(testReporter, addLogCommunicationMessage);
+                                            break;
+                                        case CommunicationAction.BeginLogScope:
+                                            var beginLogScopeCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<BeginScopeCommunicationMessage>(textMessage);
+                                            handled = HandleBeginLogScopeCommunicationAction(testReporter, beginLogScopeCommunicationMessage);
+                                            break;
+                                        case CommunicationAction.EndLogScope:
+                                            var endLogScopeCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<EndScopeCommunicationMessage>(textMessage);
+                                            handled = HandleEndLogScopeCommunicationMessage(endLogScopeCommunicationMessage);
+                                            break;
                                     }
-
-                                    testReporter.Log(logRequest);
-
-                                    handled = true;
                                 }
                                 catch (Exception)
                                 {
@@ -311,6 +305,8 @@ namespace ReportPortal.VSTest.TestLogger
 
                                 if (!handled)
                                 {
+                                    // consider line output as usual user's log message
+
                                     testReporter.Log(new CreateLogItemRequest
                                     {
                                         Time = DateTime.UtcNow,
@@ -352,7 +348,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                                     var fileExtension = Path.GetExtension(filePath);
 
-                                    attachmentLogRequest.Attach = new Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                                    attachmentLogRequest.Attach = new Client.Abstractions.Responses.Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
 
                                     testReporter.Log(attachmentLogRequest);
                                 }
@@ -491,6 +487,82 @@ namespace ReportPortal.VSTest.TestLogger
                     return suite;
                 }
             }
+        }
+
+        // key: log scope ID, value: according TestReporter
+        private Dictionary<string, ITestReporter> _nestedSteps = new Dictionary<string, ITestReporter>();
+
+        private bool HandleAddLogCommunicationAction(ITestReporter testReporter, AddLogCommunicationMessage message)
+        {
+            var logRequest = new CreateLogItemRequest
+            {
+                Level = message.Level,
+                Time = message.Time,
+                Text = message.Text
+            };
+
+            if (message.Attach != null)
+            {
+                logRequest.Attach = new Client.Abstractions.Responses.Attach
+                {
+                    Name = message.Attach.Name,
+                    MimeType = message.Attach.MimeType,
+                    Data = message.Attach.Data
+                };
+            }
+
+            if (message.ParentScopeId != null)
+            {
+                testReporter = _nestedSteps[message.ParentScopeId];
+            }
+
+            testReporter.Log(logRequest);
+
+            return true;
+        }
+
+        private bool HandleBeginLogScopeCommunicationAction(ITestReporter testReporter, BeginScopeCommunicationMessage message)
+        {
+            var startTestItemRequest = new StartTestItemRequest
+            {
+                Name = message.Name,
+                StartTime = message.BeginTime,
+                Type = TestItemType.Step,
+                HasStats = false
+            };
+
+            if (message.ParentScopeId != null)
+            {
+                testReporter = _nestedSteps[message.ParentScopeId];
+            }
+
+            var nestedStep = testReporter.StartChildTestReporter(startTestItemRequest);
+
+            _nestedSteps[message.Id] = nestedStep;
+
+            return true;
+        }
+
+        private Dictionary<Shared.Logging.LogScopeStatus, Status> _nestedStepStatusMap = new Dictionary<Shared.Logging.LogScopeStatus, Status> {
+            { Shared.Logging.LogScopeStatus.InProgress, Status.InProgress },
+            { Shared.Logging.LogScopeStatus.Passed, Status.Passed },
+            { Shared.Logging.LogScopeStatus.Failed, Status.Failed },
+            { Shared.Logging.LogScopeStatus.Skipped,Status.Skipped }
+        };
+
+        private bool HandleEndLogScopeCommunicationMessage(EndScopeCommunicationMessage message)
+        {
+            var nestedStep = _nestedSteps[message.Id];
+
+            nestedStep.Finish(new FinishTestItemRequest
+            {
+                EndTime = message.EndTime,
+                Status = _nestedStepStatusMap[message.Status]
+            });
+
+            _nestedSteps.Remove(message.Id);
+
+            return true;
         }
     }
 }

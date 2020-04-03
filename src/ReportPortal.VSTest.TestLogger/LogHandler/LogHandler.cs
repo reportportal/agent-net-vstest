@@ -1,10 +1,9 @@
 ﻿using System;
 using ReportPortal.Client.Converters;
-using System.Runtime.Serialization;
 using ReportPortal.Shared.Extensibility;
 using ReportPortal.Client.Abstractions.Requests;
-using ReportPortal.Client.Abstractions.Models;
 using ReportPortal.Shared.Logging;
+using ReportPortal.VSTest.TestLogger.LogHandler.Messages;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -14,19 +13,34 @@ namespace ReportPortal.VSTest.TestLogger
 
         public void BeginScope(ILogScope logScope)
         {
-            throw new NotImplementedException();
+            var communicationMessage = new BeginScopeCommunicationMessage
+            {
+                Id = logScope.Id,
+                ParentScopeId = logScope.Parent?.Id,
+                Name = logScope.Name,
+                BeginTime = logScope.BeginTime
+            };
+
+            Console.WriteLine(ModelSerializer.Serialize<BeginScopeCommunicationMessage>(communicationMessage));
         }
 
         public void EndScope(ILogScope logScope)
         {
-            throw new NotImplementedException();
+            var communicationMessage = new EndScopeCommunicationMessage
+            {
+                Id = logScope.Id,
+                EndTime = logScope.EndTime.Value,
+                Status = logScope.Status
+            };
+
+            Console.WriteLine(ModelSerializer.Serialize<EndScopeCommunicationMessage>(communicationMessage));
         }
 
         public bool Handle(ILogScope logScope, CreateLogItemRequest logRequest)
         {
-            var sharedMessage = new SharedLogMessage()
+            var communicationMessage = new AddLogCommunicationMessage()
             {
-                TestItemUuid = logRequest.TestItemUuid,
+                ParentScopeId = logScope?.Id,
                 Time = logRequest.Time,
                 Text = logRequest.Text,
                 Level = logRequest.Level
@@ -34,7 +48,7 @@ namespace ReportPortal.VSTest.TestLogger
 
             if (logRequest.Attach != null)
             {
-                sharedMessage.Attach = new SharedAttach
+                communicationMessage.Attach = new Attach
                 {
                     Name = logRequest.Attach.Name,
                     MimeType = logRequest.Attach.MimeType,
@@ -42,68 +56,9 @@ namespace ReportPortal.VSTest.TestLogger
                 };
             }
 
-            Console.WriteLine(ModelSerializer.Serialize<SharedLogMessage>(sharedMessage));
+            Console.WriteLine(ModelSerializer.Serialize<AddLogCommunicationMessage>(communicationMessage));
 
             return true;
         }
-    }
-
-    [DataContract]
-    class SharedLogMessage
-    {
-        /// <summary>
-        /// ID of test item to add new logs.
-        /// </summary>
-        [DataMember]
-        public string TestItemUuid { get; set; }
-
-        /// <summary>
-        /// Date time of log item.
-        /// </summary>
-        [DataMember]
-        public DateTime Time { get; set; }
-
-        /// <summary>
-        /// A level of log item.
-        /// </summary>
-        [DataMember]
-        public LogLevel Level = LogLevel.Info;
-
-        /// <summary>
-        /// Message of log item.
-        /// </summary>
-        [DataMember]
-        public string Text { get; set; }
-
-        /// <summary>
-        /// Specify an attachment of log item.
-        /// </summary>
-        [DataMember]
-        public SharedAttach Attach { get; set; }
-    }
-
-    [DataContract]
-    public class SharedAttach
-    {
-        public SharedAttach()
-        {
-
-        }
-
-        public SharedAttach(string name, string mimeType, byte[] data)
-        {
-            Name = name;
-            MimeType = mimeType;
-            Data = data;
-        }
-
-        [DataMember]
-        public string Name { get; set; }
-
-        [DataMember]
-        public byte[] Data { get; set; }
-
-        [DataMember]
-        public string MimeType { get; set; }
     }
 }
