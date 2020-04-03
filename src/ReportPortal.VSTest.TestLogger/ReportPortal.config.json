@@ -12,6 +12,6 @@
     "name": "VsTest Demo Launch",
     "description": "this is description",
     "debugMode": true,
-    "tags": ["tag1", "tag2"]
+    "attributes": [ "tag1", "os:win10" ]
   }
 }

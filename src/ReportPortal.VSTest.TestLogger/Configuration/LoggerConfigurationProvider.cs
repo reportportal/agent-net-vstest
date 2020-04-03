@@ -20,8 +20,13 @@ namespace ReportPortal.VSTest.TestLogger.Configuration
             {
                 var key = parameter.Key.ToLowerInvariant().Replace(".", ConfigurationPath.KeyDelimeter);
                 var value = parameter.Value;
-                if (key == ConfigurationPath.LaunchTags.ToLowerInvariant())
+
+                // modify flattering of collections properties (like arrays in json)
+                if (key == "launch.attributes")
+                {
                     value = parameter.Value.Replace(",", ";");
+                }
+
                 Properties[key] = value;
             }
 

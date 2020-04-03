@@ -9,11 +9,11 @@ using System.Linq;
 using System.IO;
 using ReportPortal.Shared.Configuration;
 using ReportPortal.Shared.Reporter;
-using ReportPortal.Shared.Configuration.Providers;
 using ReportPortal.VSTest.TestLogger.Configuration;
 using ReportPortal.Shared.Internal.Logging;
 using ReportPortal.Client.Abstractions.Responses;
 using ReportPortal.Client.Abstractions.Requests;
+using ReportPortal.Client.Abstractions.Models;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -21,7 +21,7 @@ namespace ReportPortal.VSTest.TestLogger
     [FriendlyName("ReportPortal")]
     public class ReportPortalLogger : ITestLoggerWithParameters
     {
-        private ITraceLogger TraceLogger { get; } = TraceLogManager.GetLogger(typeof(ReportPortalLogger));
+        private ITraceLogger TraceLogger { get; }
 
         private IConfigurationBuilder _configBuilder;
         private IConfiguration _config;
@@ -36,6 +36,9 @@ namespace ReportPortal.VSTest.TestLogger
         public ReportPortalLogger()
         {
             var testLoggerDirectory = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath);
+
+            TraceLogger = TraceLogManager.Instance.WithBaseDir(testLoggerDirectory).GetLogger(typeof(ReportPortalLogger));
+
             TraceLogger.Verbose($"This test logger base directory: {testLoggerDirectory}");
 
             // Seems Visual Studio Test Host  for net core uses built-in vstestconsole for netcoreapp1.0
@@ -132,7 +135,7 @@ namespace ReportPortal.VSTest.TestLogger
                     requestNewLaunch.Mode = LaunchMode.Debug;
                 }
 
-                requestNewLaunch.Tags = _config.GetValues(ConfigurationPath.LaunchTags, new List<string>()).ToList();
+                requestNewLaunch.Attributes = _config.GetKeyValues("Launch:Attributes", new List<KeyValuePair<string, string>>()).Select(a => new ItemAttribute { Key = a.Key, Value = a.Value }).ToList();
 
                 _launchReporter = new LaunchReporter(apiService, _config, null);
 
@@ -249,7 +252,7 @@ namespace ReportPortal.VSTest.TestLogger
                     {
                         Name = testName,
                         Description = testDescription,
-                        Tags = testCategories,
+                        Attributes = testCategories.Select(tc => new ItemAttribute { Value = tc }).ToList(),
                         StartTime = e.Result.StartTime.UtcDateTime,
                         Type = TestItemType.Step
                     };

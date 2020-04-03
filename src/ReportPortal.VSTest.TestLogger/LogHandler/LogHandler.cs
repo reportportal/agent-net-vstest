@@ -3,7 +3,8 @@ using ReportPortal.Client.Converters;
 using System.Runtime.Serialization;
 using ReportPortal.Shared.Extensibility;
 using ReportPortal.Client.Abstractions.Requests;
-using ReportPortal.Client.Abstractions.Responses;
+using ReportPortal.Client.Abstractions.Models;
+using ReportPortal.Shared.Logging;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -11,7 +12,17 @@ namespace ReportPortal.VSTest.TestLogger
     {
         public int Order => 100;
 
-        public bool Handle(CreateLogItemRequest logRequest)
+        public void BeginScope(ILogScope logScope)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void EndScope(ILogScope logScope)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Handle(ILogScope logScope, CreateLogItemRequest logRequest)
         {
             var sharedMessage = new SharedLogMessage()
             {
