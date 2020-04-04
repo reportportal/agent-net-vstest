@@ -348,7 +348,18 @@ namespace ReportPortal.VSTest.TestLogger
 
                                     var fileExtension = Path.GetExtension(filePath);
 
-                                    attachmentLogRequest.Attach = new Client.Abstractions.Responses.Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), File.ReadAllBytes(filePath));
+                                    byte[] bytes;
+
+                                    using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read))
+                                    {
+                                        using (var memoryStream = new MemoryStream())
+                                        {
+                                            fileStream.CopyTo(memoryStream);
+                                            bytes = memoryStream.ToArray();
+                                        }
+                                    }
+
+                                    attachmentLogRequest.Attach = new Client.Abstractions.Responses.Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), bytes);
 
                                     testReporter.Log(attachmentLogRequest);
                                 }
