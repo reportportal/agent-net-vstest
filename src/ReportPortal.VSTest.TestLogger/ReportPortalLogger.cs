@@ -365,7 +365,16 @@ namespace ReportPortal.VSTest.TestLogger
                                 }
                                 catch (Exception exp)
                                 {
-                                    TraceLogger.Error($"Cannot read a content of '{filePath}' file: {exp.Message}");
+                                    var error = $"Cannot read a content of '{filePath}' file: {exp.Message}";
+                                    
+                                    testReporter.Log(new CreateLogItemRequest
+                                    {
+                                        Level = LogLevel.Warning,
+                                        Time = e.Result.EndTime.UtcDateTime,
+                                        Text = error
+                                    });
+
+                                    TraceLogger.Error(error);
                                 }
                             }
                         }
