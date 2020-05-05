@@ -28,6 +28,9 @@ Example of config file:
   }
 }
 ```
+
+[More](https://github.com/reportportal/commons-net/blob/develop/docs/Configuration.md) about configuration.
+
 # Tests execution
 To execute tests with real-time reporting, specify `Logger` argument.
 
