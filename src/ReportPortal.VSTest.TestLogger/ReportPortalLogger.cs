@@ -138,7 +138,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                 requestNewLaunch.Attributes = _config.GetKeyValues("Launch:Attributes", new List<KeyValuePair<string, string>>()).Select(a => new ItemAttribute { Key = a.Key, Value = a.Value }).ToList();
 
-                _launchReporter = new LaunchReporter(apiService, _config, null);
+                _launchReporter = new LaunchReporter(apiService, _config, null, Shared.Extensibility.ExtensionManager.Instance);
 
                 _launchReporter.Start(requestNewLaunch);
             }
@@ -366,7 +366,7 @@ namespace ReportPortal.VSTest.TestLogger
                                 catch (Exception exp)
                                 {
                                     var error = $"Cannot read a content of '{filePath}' file: {exp.Message}";
-                                    
+
                                     testReporter.Log(new CreateLogItemRequest
                                     {
                                         Level = LogLevel.Warning,
