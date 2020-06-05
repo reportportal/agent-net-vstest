@@ -253,7 +253,7 @@ namespace ReportPortal.VSTest.TestLogger
                     {
                         Name = testName,
                         Description = testDescription,
-                        Attributes = testCategories.Select(tc => new ItemAttribute { Value = tc }).ToList(),
+                        Attributes = testCategories.Select(tc => new ItemAttribute { Key = "Category", Value = tc }).ToList(),
                         StartTime = e.Result.StartTime.UtcDateTime,
                         Type = TestItemType.Step
                     };
