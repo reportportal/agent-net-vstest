@@ -11,7 +11,6 @@ using ReportPortal.Shared.Configuration;
 using ReportPortal.Shared.Reporter;
 using ReportPortal.VSTest.TestLogger.Configuration;
 using ReportPortal.Shared.Internal.Logging;
-using ReportPortal.Client.Abstractions.Responses;
 using ReportPortal.Client.Abstractions.Requests;
 using ReportPortal.Client.Abstractions.Models;
 using ReportPortal.VSTest.TestLogger.LogHandler.Messages;
@@ -138,6 +137,8 @@ namespace ReportPortal.VSTest.TestLogger
 
                 requestNewLaunch.Attributes = _config.GetKeyValues("Launch:Attributes", new List<KeyValuePair<string, string>>()).Select(a => new ItemAttribute { Key = a.Key, Value = a.Value }).ToList();
 
+                Shared.Extensibility.Analytics.AnalyticsReportEventsObserver.DefineConsumer("agent-dotnet-vstest");
+
                 _launchReporter = new LaunchReporter(apiService, _config, null, Shared.Extensibility.ExtensionManager.Instance);
 
                 _launchReporter.Start(requestNewLaunch);
@@ -253,7 +254,7 @@ namespace ReportPortal.VSTest.TestLogger
                     {
                         Name = testName,
                         Description = testDescription,
-                        Attributes = testCategories.Select(tc => new ItemAttribute { Value = tc }).ToList(),
+                        Attributes = testCategories.Select(tc => new ItemAttribute { Key = "Category", Value = tc }).ToList(),
                         StartTime = e.Result.StartTime.UtcDateTime,
                         Type = TestItemType.Step
                     };
