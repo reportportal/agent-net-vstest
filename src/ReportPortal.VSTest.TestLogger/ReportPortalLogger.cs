@@ -360,7 +360,7 @@ namespace ReportPortal.VSTest.TestLogger
                                         }
                                     }
 
-                                    attachmentLogRequest.Attach = new Client.Abstractions.Responses.Attach(Path.GetFileName(filePath), Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), bytes);
+                                    attachmentLogRequest.Attach = new Client.Abstractions.Responses.Attach(Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), bytes);
 
                                     testReporter.Log(attachmentLogRequest);
                                 }
@@ -564,11 +564,11 @@ namespace ReportPortal.VSTest.TestLogger
             return true;
         }
 
-        private Dictionary<Shared.Logging.LogScopeStatus, Status> _nestedStepStatusMap = new Dictionary<Shared.Logging.LogScopeStatus, Status> {
-            { Shared.Logging.LogScopeStatus.InProgress, Status.InProgress },
-            { Shared.Logging.LogScopeStatus.Passed, Status.Passed },
-            { Shared.Logging.LogScopeStatus.Failed, Status.Failed },
-            { Shared.Logging.LogScopeStatus.Skipped,Status.Skipped }
+        private Dictionary<Shared.Execution.Logging.LogScopeStatus, Status> _nestedStepStatusMap = new Dictionary<Shared.Execution.Logging.LogScopeStatus, Status> {
+            { Shared.Execution.Logging.LogScopeStatus.InProgress, Status.InProgress },
+            { Shared.Execution.Logging.LogScopeStatus.Passed, Status.Passed },
+            { Shared.Execution.Logging.LogScopeStatus.Failed, Status.Failed },
+            { Shared.Execution.Logging.LogScopeStatus.Skipped,Status.Skipped }
         };
 
         private bool HandleEndLogScopeCommunicationMessage(EndScopeCommunicationMessage message)
