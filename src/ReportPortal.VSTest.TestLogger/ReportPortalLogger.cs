@@ -47,6 +47,7 @@ namespace ReportPortal.VSTest.TestLogger
             var jsonPath = Path.Combine(testLoggerDirectory, "ReportPortal.config.json");
             _configBuilder = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables();
 
+            _statusMap[TestOutcome.None] = Status.Skipped;
             _statusMap[TestOutcome.Passed] = Status.Passed;
             _statusMap[TestOutcome.Failed] = Status.Failed;
             _statusMap[TestOutcome.Skipped] = Status.Skipped;
