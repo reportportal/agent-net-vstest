@@ -67,12 +67,14 @@ Add the `*.runsettings` file into solution with the following minimal content
 
 In `Test Explorer` window select this file as run configuration (menu Test -> Test Settings -> Select Test Settings File).
 
-Now you can execute tests in Visual Studio and see results on the server. `Launch.Description` property in xml is provided as an exmple how to put configuration properties for logger. 
+Now you can execute tests in Visual Studio and see results on the server. `Launch.Description` property in xml is provided as an exmple how to put configuration properties for logger.
 
 # Parameters overriding
 ```cmd
 --logger:ReportPortal;Launch.Name="My new launch name"
 ```
+
+Complex parameters such as `Launch.Attributes` can be overriden as `k1:v1,k2:v2`. `,` is reserved as a delimiter of launch attributes.
 
 # Environment variables
 It's possible to override parameters via environment variables.

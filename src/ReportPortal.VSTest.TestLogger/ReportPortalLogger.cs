@@ -361,7 +361,7 @@ namespace ReportPortal.VSTest.TestLogger
                                         }
                                     }
 
-                                    attachmentLogRequest.Attach = new Client.Abstractions.Responses.Attach(Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), bytes);
+                                    attachmentLogRequest.Attach = new LogItemAttach(Shared.MimeTypes.MimeTypeMap.GetMimeType(fileExtension), bytes);
 
                                     testReporter.Log(attachmentLogRequest);
                                 }
@@ -525,7 +525,7 @@ namespace ReportPortal.VSTest.TestLogger
 
             if (message.Attach != null)
             {
-                logRequest.Attach = new Client.Abstractions.Responses.Attach
+                logRequest.Attach = new LogItemAttach
                 {
                     Name = message.Attach.Name,
                     MimeType = message.Attach.MimeType,
