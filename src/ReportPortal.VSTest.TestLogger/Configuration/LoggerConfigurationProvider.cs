@@ -22,7 +22,7 @@ namespace ReportPortal.VSTest.TestLogger.Configuration
                 var value = parameter.Value;
 
                 // modify flattering of collections properties (like arrays in json)
-                if (key == "launch.attributes")
+                if (key == $"launch{ConfigurationPath.KeyDelimeter}attributes")
                 {
                     value = parameter.Value.Replace(",", ";");
                 }
