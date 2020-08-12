@@ -527,7 +527,6 @@ namespace ReportPortal.VSTest.TestLogger
             {
                 logRequest.Attach = new LogItemAttach
                 {
-                    Name = message.Attach.Name,
                     MimeType = message.Attach.MimeType,
                     Data = message.Attach.Data
                 };

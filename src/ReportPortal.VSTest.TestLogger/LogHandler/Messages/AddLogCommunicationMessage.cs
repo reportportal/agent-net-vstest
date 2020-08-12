@@ -45,15 +45,11 @@ namespace ReportPortal.VSTest.TestLogger.LogHandler.Messages
 
         }
 
-        public Attach(string name, string mimeType, byte[] data)
+        public Attach(string mimeType, byte[] data)
         {
-            Name = name;
             MimeType = mimeType;
             Data = data;
         }
-
-        [DataMember]
-        public string Name { get; set; }
 
         [DataMember]
         public byte[] Data { get; set; }
