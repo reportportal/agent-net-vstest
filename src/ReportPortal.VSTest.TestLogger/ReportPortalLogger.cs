@@ -384,9 +384,19 @@ namespace ReportPortal.VSTest.TestLogger
 
                     // finish test
 
+                    // adjust end time, fixes https://github.com/reportportal/agent-net-vstest/issues/49
+                    var endTime = e.Result.EndTime.UtcDateTime;
+                    var diffTime = endTime - e.Result.StartTime.UtcDateTime.Add(e.Result.Duration);
+                    var precision = TimeSpan.FromMilliseconds(100);
+                    if (diffTime >= precision)
+                    {
+                        TraceLogger.Verbose($"Adjusting test EndTime to {e.Result.StartTime.UtcDateTime} + {e.Result.Duration} because of diff {diffTime} is greater than {precision}");
+                        endTime = e.Result.StartTime.UtcDateTime.Add(e.Result.Duration);
+                    }
+
                     var finishTestRequest = new FinishTestItemRequest
                     {
-                        EndTime = e.Result.EndTime.UtcDateTime,
+                        EndTime = endTime,
                         Status = _statusMap[e.Result.Outcome]
                     };
 
