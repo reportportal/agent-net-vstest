@@ -70,19 +70,6 @@ namespace ReportPortal.VSTest.TestLogger
                     events.TestRunStart += Events_TestRunStart;
                     events.TestResult += Events_TestResult;
                     events.TestRunComplete += Events_TestRunComplete;
-
-                    //IWebProxy proxy = null;
-                    //if (Configuration.ReportPortal.Server.Proxy.ElementInformation.IsPresent)
-                    //{
-
-                    //    proxy = new WebProxy(Configuration.ReportPortal.Server.Proxy.Server);
-                    //    if (!String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Username) && !String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Password))
-                    //    {
-                    //        proxy.Credentials = String.IsNullOrEmpty(Configuration.ReportPortal.Server.Proxy.Domain)==false
-                    //            ? new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password, Configuration.ReportPortal.Server.Proxy.Domain)
-                    //            : new NetworkCredential(Configuration.ReportPortal.Server.Proxy.Username, Configuration.ReportPortal.Server.Proxy.Password);
-                    //    }
-                    //}
                 }
             }
             catch (Exception exp)
@@ -120,10 +107,7 @@ namespace ReportPortal.VSTest.TestLogger
         {
             try
             {
-                var apiUri = _config.GetValue<string>(ConfigurationPath.ServerUrl);
-                var apiProject = _config.GetValue<string>(ConfigurationPath.ServerProject);
-                var apiToken = _config.GetValue<string>(ConfigurationPath.ServerAuthenticationUuid);
-                var apiService = new Service(new Uri(apiUri), apiProject, apiToken);
+                var apiService = new Shared.Reporter.Http.ClientServiceBuilder(_config).Build();
 
                 var requestNewLaunch = new StartLaunchRequest
                 {
