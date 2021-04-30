@@ -14,6 +14,7 @@ using ReportPortal.Shared.Internal.Logging;
 using ReportPortal.Client.Abstractions.Requests;
 using ReportPortal.Client.Abstractions.Models;
 using ReportPortal.VSTest.TestLogger.LogHandler.Messages;
+using ReportPortal.Shared.Converters;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -239,7 +240,7 @@ namespace ReportPortal.VSTest.TestLogger
                     {
                         Name = testName,
                         Description = testDescription,
-                        Attributes = testCategories.Select(tc => new ItemAttribute { Key = "Category", Value = tc }).ToList(),
+                        Attributes = testCategories.Select(tc => new ItemAttributeConverter().ConvertFrom(tc, opts => opts.UndefinedKey = "Category")).ToList(),
                         StartTime = e.Result.StartTime.UtcDateTime,
                         Type = TestItemType.Step
                     };
