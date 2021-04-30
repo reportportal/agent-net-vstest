@@ -459,6 +459,10 @@ namespace ReportPortal.VSTest.TestLogger
 
                 stopwatch.Stop();
                 Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
+
+                var statisticsRecord = _launchReporter.StatisticsCounter.ToString();
+                TraceLogger.Info(statisticsRecord);
+                Console.WriteLine(statisticsRecord);
             }
             catch (Exception exp)
             {
