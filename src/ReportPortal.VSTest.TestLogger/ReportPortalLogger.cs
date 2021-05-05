@@ -385,6 +385,16 @@ namespace ReportPortal.VSTest.TestLogger
                         Status = _statusMap[e.Result.Outcome]
                     };
 
+                    // don't investigate skipped tests
+                    if (finishTestRequest.Status == Status.Skipped)
+                    {
+                        finishTestRequest.Issue = new Client.Abstractions.Responses.Issue
+                        {
+                            Type = WellKnownIssueType.NotDefect,
+                            Comment = e.Result.ErrorMessage
+                        };
+                    }
+
                     testReporter.Finish(finishTestRequest);
                 }
             }
