@@ -45,8 +45,7 @@ namespace ReportPortal.VSTest.TestLogger
             // Seems Visual Studio Test Host  for net core uses built-in vstestconsole for netcoreapp1.0
             System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12;
 
-            var jsonPath = Path.Combine(testLoggerDirectory, "ReportPortal.config.json");
-            _configBuilder = new ConfigurationBuilder().AddJsonFile(jsonPath).AddEnvironmentVariables();
+            _configBuilder = new ConfigurationBuilder().AddDefaults(testLoggerDirectory);
 
             _statusMap[TestOutcome.None] = Status.Skipped;
             _statusMap[TestOutcome.Passed] = Status.Passed;
