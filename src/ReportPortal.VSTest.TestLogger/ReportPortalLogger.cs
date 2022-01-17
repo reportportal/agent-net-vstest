@@ -122,7 +122,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                 requestNewLaunch.Attributes = _config.GetKeyValues("Launch:Attributes", new List<KeyValuePair<string, string>>()).Select(a => new ItemAttribute { Key = a.Key, Value = a.Value }).ToList();
 
-                Shared.Extensibility.Analytics.AnalyticsReportEventsObserver.DefineConsumer("agent-dotnet-vstest");
+                Shared.Extensibility.Embedded.Analytics.AnalyticsReportEventsObserver.DefineConsumer("agent-dotnet-vstest");
 
                 _launchReporter = new LaunchReporter(apiService, _config, null, Shared.Extensibility.ExtensionManager.Instance);
 
