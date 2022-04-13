@@ -216,9 +216,9 @@ namespace ReportPortal.VSTest.TestLogger
                         }
 
                         // find categories
-                        var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
+                        var testCategories = new List<string> ();
+                        var traits = e.Result.TestCase.Traits.ToList();
 
-                        var attributes = new List<Trait>();
                         if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                         {
                             var testProperty = e.Result.TestCase.Properties.FirstOrDefault(p => p.Id == "MSTestDiscoverer.TestCategory");
@@ -226,7 +226,6 @@ namespace ReportPortal.VSTest.TestLogger
                             {
                                 testCategories.AddRange((string[])e.Result.TestCase.GetPropertyValue(testProperty));
                             }
-                            attributes = e.Result.TestCase.Traits.ToList();
                         }
                         else if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("nunit"))
                         {
@@ -247,9 +246,12 @@ namespace ReportPortal.VSTest.TestLogger
                             Type = TestItemType.Step
                         };
 
-                        // add mstest TestPropertyAttributes
-                        foreach (var itemAttribute in attributes.Select(x => new ItemAttribute
-                                     { Key = x.Name, Value = x.Value })) startTestRequest.Attributes.Add(itemAttribute);
+                        // add traits to Attributes
+                        if (traits.Any() && startTestRequest.Attributes == null)
+                            startTestRequest.Attributes = new List<ItemAttribute>();
+                        foreach (var itemAttribute in traits.Select(x => new ItemAttribute
+                                     { Key = x.Name, Value = x.Value }))
+                            startTestRequest.Attributes.Add(itemAttribute);
 
                         var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
 
