@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System.Collections.Generic;
-using ReportPortal.Client;
 using System.Diagnostics;
 using System.Linq;
 using System.IO;
@@ -217,7 +216,8 @@ namespace ReportPortal.VSTest.TestLogger
                         }
 
                         // find categories
-                        var testCategories = e.Result.TestCase.Traits.Where(t => t.Name.ToLower() == "Category".ToLower()).Select(x => x.Value).ToList();
+                        var testCategories = new List<string> ();
+                        var traits = e.Result.TestCase.Traits.ToList();
 
                         if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
                         {
@@ -245,6 +245,13 @@ namespace ReportPortal.VSTest.TestLogger
                             StartTime = e.Result.StartTime.UtcDateTime,
                             Type = TestItemType.Step
                         };
+
+                        // add traits to Attributes
+                        if (traits.Any() && startTestRequest.Attributes == null)
+                            startTestRequest.Attributes = new List<ItemAttribute>();
+                        foreach (var itemAttribute in traits.Select(x => new ItemAttribute
+                                     { Key = x.Name, Value = x.Value }))
+                            startTestRequest.Attributes.Add(itemAttribute);
 
                         var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
 
