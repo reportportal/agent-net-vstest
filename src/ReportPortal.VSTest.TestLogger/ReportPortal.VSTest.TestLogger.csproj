@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net451;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net462;</TargetFrameworks>
     
     <Authors>Nikolay Borisenko, Report Portal Community</Authors>
     <Description>VsTest extension for reporting test results into http://reportportal.io</Description>
@@ -25,7 +25,7 @@
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0">
       <PrivateAssets>all;</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="ReportPortal.Shared" Version="3.2.0">
+    <PackageReference Include="ReportPortal.Shared" Version="3.3.0-alpha.14">
       <PrivateAssets>contentfiles;analyzers;</PrivateAssets>
     </PackageReference>
   </ItemGroup>

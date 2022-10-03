@@ -1,10 +1,10 @@
 ﻿using System;
-using ReportPortal.Client.Converters;
 using ReportPortal.Shared.Extensibility;
 using ReportPortal.VSTest.TestLogger.LogHandler.Messages;
 using ReportPortal.Shared.Extensibility.Commands;
 using ReportPortal.Client.Abstractions.Models;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -38,7 +38,7 @@ namespace ReportPortal.VSTest.TestLogger
                 };
             }
 
-            Console.WriteLine(ModelSerializer.Serialize<AddLogCommunicationMessage>(communicationMessage));
+            Console.WriteLine(JsonSerializer.Serialize(communicationMessage));
         }
 
         private Dictionary<Shared.Execution.Logging.LogMessageLevel, LogLevel> _logLevelMap = new Dictionary<Shared.Execution.Logging.LogMessageLevel, LogLevel> {
@@ -61,7 +61,7 @@ namespace ReportPortal.VSTest.TestLogger
                 Status = logScope.Status
             };
 
-            Console.WriteLine(ModelSerializer.Serialize<EndScopeCommunicationMessage>(communicationMessage));
+            Console.WriteLine(JsonSerializer.Serialize(communicationMessage));
         }
 
         private void CommandsSource_OnBeginLogScopeCommand(Shared.Execution.ILogContext logContext, Shared.Extensibility.Commands.CommandArgs.LogScopeCommandArgs args)
@@ -76,7 +76,7 @@ namespace ReportPortal.VSTest.TestLogger
                 BeginTime = logScope.BeginTime
             };
 
-            Console.WriteLine(ModelSerializer.Serialize<BeginScopeCommunicationMessage>(communicationMessage));
+            Console.WriteLine(JsonSerializer.Serialize(communicationMessage));
         }
     }
 }

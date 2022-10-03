@@ -14,6 +14,7 @@ using ReportPortal.Client.Abstractions.Requests;
 using ReportPortal.Client.Abstractions.Models;
 using ReportPortal.VSTest.TestLogger.LogHandler.Messages;
 using ReportPortal.Shared.Converters;
+using System.Text.Json;
 
 namespace ReportPortal.VSTest.TestLogger
 {
@@ -275,20 +276,20 @@ namespace ReportPortal.VSTest.TestLogger
                                             textMessage = line.Substring(3);
                                         }
 
-                                        var baseCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<BaseCommunicationMessage>(textMessage);
+                                        var baseCommunicationMessage = JsonSerializer.Deserialize<BaseCommunicationMessage>(textMessage);
 
                                         switch (baseCommunicationMessage.Action)
                                         {
                                             case CommunicationAction.AddLog:
-                                                var addLogCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<AddLogCommunicationMessage>(textMessage);
+                                                var addLogCommunicationMessage = JsonSerializer.Deserialize<AddLogCommunicationMessage>(textMessage);
                                                 handled = HandleAddLogCommunicationAction(testReporter, addLogCommunicationMessage);
                                                 break;
                                             case CommunicationAction.BeginLogScope:
-                                                var beginLogScopeCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<BeginScopeCommunicationMessage>(textMessage);
+                                                var beginLogScopeCommunicationMessage = JsonSerializer.Deserialize<BeginScopeCommunicationMessage>(textMessage);
                                                 handled = HandleBeginLogScopeCommunicationAction(testReporter, beginLogScopeCommunicationMessage);
                                                 break;
                                             case CommunicationAction.EndLogScope:
-                                                var endLogScopeCommunicationMessage = Client.Converters.ModelSerializer.Deserialize<EndScopeCommunicationMessage>(textMessage);
+                                                var endLogScopeCommunicationMessage = JsonSerializer.Deserialize<EndScopeCommunicationMessage>(textMessage);
                                                 handled = HandleEndLogScopeCommunicationMessage(endLogScopeCommunicationMessage);
                                                 break;
                                         }
