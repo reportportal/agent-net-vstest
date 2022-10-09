@@ -4,9 +4,9 @@
     <TargetFrameworks>netstandard2.0;net462;</TargetFrameworks>
     
     <Authors>Nikolay Borisenko, Report Portal Community</Authors>
-    <Description>VsTest extension for reporting test results into http://reportportal.io</Description>
+    <Description>VsTest extension for reporting test results into https://reportportal.io</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>http://reportportal.io</PackageProjectUrl>
+    <PackageProjectUrl>https://reportportal.io</PackageProjectUrl>
     <PackageIcon>Logo.png</PackageIcon>
     
     <RepositoryType>GitHub</RepositoryType>
