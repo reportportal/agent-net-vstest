@@ -17,7 +17,7 @@ namespace ReportPortal.VSTest.TestLogger.LogHandler.Messages
         /// <summary>
         /// A level of log item.
         /// </summary>
-        public LogLevel Level = LogLevel.Info;
+        public LogLevel Level { get; set; } = LogLevel.Info;
 
         /// <summary>
         /// Message of log item.
