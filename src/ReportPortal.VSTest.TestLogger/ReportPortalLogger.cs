@@ -466,6 +466,7 @@ namespace ReportPortal.VSTest.TestLogger
 
                     stopwatch.Stop();
                     Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
+                    Console.WriteLine($"Report Portal results at: {_launchReporter.Info.Url}");
 
                     var statisticsRecord = _launchReporter.StatisticsCounter.ToString();
                     TraceLogger.Info(statisticsRecord);
