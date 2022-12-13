@@ -464,7 +464,7 @@ namespace ReportPortal.VSTest.TestLogger
                     }
 
                     stopwatch.Stop();
-                    Console.WriteLine($"Successfully sent at {_sender.LaunchReporter.Info.Url} Elapsed: {stopwatch.Elapsed}");
+                    Console.WriteLine($"Successfully sent at {_launchReporter.Info.Url} Elapsed: {stopwatch.Elapsed}");
 
                     var statisticsRecord = _launchReporter.StatisticsCounter.ToString();
                     TraceLogger.Info(statisticsRecord);
