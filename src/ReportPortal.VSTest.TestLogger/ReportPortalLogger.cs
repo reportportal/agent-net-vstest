@@ -452,7 +452,6 @@ namespace ReportPortal.VSTest.TestLogger
                     _launchReporter.Finish(requestFinishLaunch);
 
                     Stopwatch stopwatch = Stopwatch.StartNew();
-                    Console.Write("Finishing to send results to Report Portal...");
 
                     try
                     {
@@ -465,8 +464,7 @@ namespace ReportPortal.VSTest.TestLogger
                     }
 
                     stopwatch.Stop();
-                    Console.WriteLine($" Sync time: {stopwatch.Elapsed}");
-                    Console.WriteLine($"Report Portal results at: {_launchReporter.Info.Url}");
+                    Console.WriteLine($"Successfully sent at {_sender.LaunchReporter.Info.Url} Elapsed: {stopwatch.Elapsed}");
 
                     var statisticsRecord = _launchReporter.StatisticsCounter.ToString();
                     TraceLogger.Info(statisticsRecord);
