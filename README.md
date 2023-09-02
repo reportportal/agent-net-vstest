@@ -6,7 +6,7 @@
 Install **ReportPortal.VSTest.TestLogger** NuGet package into your project with tests.
 
 # Configuration
-Add new **ReportPortal.config.json** file into your project with *Copy if newer* value for *Copy to Output Directory* property.
+Add new **ReportPortal.json** file into your project with *Copy if newer* value for *Copy to Output Directory* property.
 
 Example of config file:
 ```json
@@ -14,11 +14,9 @@ Example of config file:
   "$schema": "https://raw.githubusercontent.com/reportportal/agent-net-vstest/master/src/ReportPortal.VSTest.TestLogger/ReportPortal.config.schema",
   "enabled": true,
   "server": {
-    "url": "https://rp.epam.com/api/v1/",
+    "url": "https://rp.epam.com",
     "project": "default_project",
-    "authentication": {
-      "uuid": "7853c7a9-7f27-43ea-835a-cab01355fd17"
-    }
+    "apiKey": "7853c7a9-7f27-43ea-835a-cab01355fd17"
   },
   "launch": {
     "name": "VS Test Demo Launch",
