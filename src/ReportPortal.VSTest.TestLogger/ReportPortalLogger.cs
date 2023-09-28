@@ -36,6 +36,21 @@ namespace ReportPortal.VSTest.TestLogger
 
         public ReportPortalLogger()
         {
+# if NETFRAMEWORK
+            // Negotiate "Comparing the assembly name resulted in the mismatch: Major Version" assembly binding issue for legacy runtime
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
+            {
+                var assemblyName = new System.Reflection.AssemblyName(args.Name).Name;
+                var assemblyFileName = Path.Combine(Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.Location).LocalPath), $"{assemblyName}.dll");
+
+                if (File.Exists(assemblyFileName))
+                {
+                    return System.Reflection.Assembly.LoadFrom(assemblyFileName);
+                }
+
+                return null;
+            };
+#endif
             var testLoggerDirectory = Path.GetDirectoryName(new Uri(typeof(ReportPortalLogger).Assembly.CodeBase).LocalPath);
 
             TraceLogger = TraceLogManager.Instance.WithBaseDir(testLoggerDirectory).GetLogger(typeof(ReportPortalLogger));
@@ -53,6 +68,7 @@ namespace ReportPortal.VSTest.TestLogger
             _statusMap[TestOutcome.Skipped] = Status.Skipped;
             _statusMap[TestOutcome.NotFound] = Status.Skipped;
         }
+
 
         /// <summary>
         /// Initializes the Test Logger.
@@ -217,7 +233,7 @@ namespace ReportPortal.VSTest.TestLogger
                         }
 
                         // find categories
-                        var testCategories = new List<string> ();
+                        var testCategories = new List<string>();
                         var traits = e.Result.TestCase.Traits.ToList();
 
                         if (e.Result.TestCase.ExecutorUri.ToString().ToLower().Contains("mstest"))
@@ -251,7 +267,7 @@ namespace ReportPortal.VSTest.TestLogger
                         if (traits.Any() && startTestRequest.Attributes == null)
                             startTestRequest.Attributes = new List<ItemAttribute>();
                         foreach (var itemAttribute in traits.Select(x => new ItemAttribute
-                                     { Key = x.Name, Value = x.Value }))
+                        { Key = x.Name, Value = x.Value }))
                             startTestRequest.Attributes.Add(itemAttribute);
 
                         var testReporter = suiteReporter.StartChildTestReporter(startTestRequest);
