@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/0bgatrnrtl1r1prm/branch/master?svg=true)](https://ci.appveyor.com/project/nvborisenko/agent-net-vstest/branch/master)
+[![CI](https://github.com/reportportal/agent-net-vstest/actions/workflows/ci.yml/badge.svg)](https://github.com/reportportal/agent-net-vstest/actions/workflows/ci.yml)
 
 # Installation
 [![NuGet version](https://badge.fury.io/nu/ReportPortal.VSTest.TestLogger.svg)](https://badge.fury.io/nu/ReportPortal.VSTest.TestLogger)
