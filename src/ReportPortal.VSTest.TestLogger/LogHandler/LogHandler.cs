@@ -26,7 +26,7 @@ namespace ReportPortal.VSTest.TestLogger
                 ParentScopeId = logScope?.Id,
                 Time = args.LogMessage.Time,
                 Text = args.LogMessage.Message,
-                Level = _logLevelMap[args.LogMessage.Level]
+                Level = args.LogMessage.LevelString
             };
 
             if (args.LogMessage.Attachment != null)
@@ -40,15 +40,6 @@ namespace ReportPortal.VSTest.TestLogger
 
             Console.WriteLine(JsonSerializer.Serialize(communicationMessage));
         }
-
-        private Dictionary<Shared.Execution.Logging.LogMessageLevel, LogLevel> _logLevelMap = new Dictionary<Shared.Execution.Logging.LogMessageLevel, LogLevel> {
-            { Shared.Execution.Logging.LogMessageLevel.Debug, LogLevel.Debug },
-            { Shared.Execution.Logging.LogMessageLevel.Error, LogLevel.Error },
-            { Shared.Execution.Logging.LogMessageLevel.Fatal, LogLevel.Fatal },
-            { Shared.Execution.Logging.LogMessageLevel.Info, LogLevel.Info },
-            { Shared.Execution.Logging.LogMessageLevel.Trace, LogLevel.Trace },
-            { Shared.Execution.Logging.LogMessageLevel.Warning, LogLevel.Warning }
-        };
 
         private void CommandsSource_OnEndLogScopeCommand(Shared.Execution.ILogContext logContext, Shared.Extensibility.Commands.CommandArgs.LogScopeCommandArgs args)
         {

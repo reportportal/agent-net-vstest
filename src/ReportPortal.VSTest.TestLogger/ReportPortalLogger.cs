@@ -555,7 +555,7 @@ namespace ReportPortal.VSTest.TestLogger
         {
             var logRequest = new CreateLogItemRequest
             {
-                Level = message.Level,
+                LevelString = message.Level,
                 Time = message.Time,
                 Text = message.Text
             };
